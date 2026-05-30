@@ -93,6 +93,8 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($taskTitles as $i => $title) {
+            $startDate = fake()->boolean(70) ? now()->subDays(rand(1, 30))->toDateString() : null;
+
             Item::factory()->task()->create([
                 'title' => $title,
                 'description' => fake()->boolean(50) ? fake()->sentence(8) : null,
@@ -100,6 +102,10 @@ class DatabaseSeeder extends Seeder
                 'assignee_id' => $users[array_rand($users)]->id,
                 'reporter_id' => $admin->id,
                 'due_date' => fake()->boolean(60) ? now()->addDays(rand(1, 45)) : null,
+                'start_date' => $startDate,
+                'end_date' => $startDate ? now()->parse($startDate)->addDays(rand(1, 20))->toDateString() : null,
+                'etd_date' => fake()->boolean(40) ? now()->subDays(rand(0, 5))->toDateString() : null,
+                'eta_date' => fake()->boolean(40) ? now()->addDays(rand(1, 14))->toDateString() : null,
                 'position' => $i,
             ]);
         }

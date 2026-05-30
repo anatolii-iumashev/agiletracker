@@ -5,6 +5,7 @@ namespace App\Models;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -36,6 +37,16 @@ class User extends Authenticatable implements FilamentUser
     public function reportedItems(): HasMany
     {
         return $this->hasMany(Item::class, 'reporter_id');
+    }
+
+    public function toItems(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'item_to');
+    }
+
+    public function ccItems(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'item_cc');
     }
 
     public function comments(): HasMany

@@ -25,13 +25,23 @@ class Item extends Model
         'assignee_id',
         'reporter_id',
         'due_date',
+        'start_date',
+        'end_date',
+        'etd_date',
+        'eta_date',
         'estimated_minutes',
         'spent_minutes',
         'position',
+        'to',
+        'cc',
     ];
 
     protected $casts = [
         'due_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'etd_date' => 'date',
+        'eta_date' => 'date',
         'estimated_minutes' => 'integer',
         'spent_minutes' => 'integer',
     ];
@@ -66,6 +76,16 @@ class Item extends Model
     public function labels(): BelongsToMany
     {
         return $this->belongsToMany(Label::class, 'item_label');
+    }
+
+    public function to(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'item_to');
+    }
+
+    public function cc(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'item_cc');
     }
 
     public function comments(): HasMany

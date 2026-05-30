@@ -11,7 +11,7 @@ class ViewItem extends ViewRecord
 {
     protected static string $resource = ItemResource::class;
 
-    protected Width | string | null $maxContentWidth = Width::Full;
+    protected Width|string|null $maxContentWidth = Width::Full;
 
     protected function getHeaderActions(): array
     {
