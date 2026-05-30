@@ -36,42 +36,25 @@ class Sent extends Page implements HasTable
             ->query(fn (): Builder => Item::query()->where('reporter_id', auth()->id()))
             ->defaultSort('position')
             ->columns([
-                Tables\Columns\TextColumn::make('type')
-                    ->badge()
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray' => 'case',
-                    ]),
-
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
                     ->limit(60)
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'todo',
-                        'warning' => 'in_progress',
-                        'info' => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\TextColumn::make('priority')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger' => 'critical',
-                    ]),
-
                 Tables\Columns\TextColumn::make('assignee.name')
                     ->label('To')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('cc.name')
+                    ->label('CC')
+                    ->badge()
+                    ->state(fn (Item $record) => $record->cc->pluck('name')->join(', ')),
+
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
+                    ->badge()
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()

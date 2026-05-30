@@ -21,6 +21,7 @@ class Item extends Model
     protected $fillable = [
         'title',
         'description',
+        'meta',
         'parent_id',
         'assignee_id',
         'reporter_id',
@@ -29,8 +30,6 @@ class Item extends Model
         'end_date',
         'etd_date',
         'eta_date',
-        'estimated_minutes',
-        'spent_minutes',
         'position',
         'to',
         'cc',
@@ -42,8 +41,7 @@ class Item extends Model
         'end_date' => 'date',
         'etd_date' => 'date',
         'eta_date' => 'date',
-        'estimated_minutes' => 'integer',
-        'spent_minutes' => 'integer',
+        'meta' => 'array',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -110,24 +108,12 @@ class Item extends Model
         return $query->whereHas('labels', fn ($q) => $q->where('name', $labelName));
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    public function getEstimatedHoursAttribute(): ?float
-    {
-        return $this->estimated_minutes ? round($this->estimated_minutes / 60, 1) : null;
-    }
-
-    public function getSpentHoursAttribute(): float
-    {
-        return round($this->spent_minutes / 60, 1);
-    }
-
     // ─── Activity log ─────────────────────────────────────────────────────────
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'assignee_id', 'parent_id'])
+            ->logOnly(['title', 'assignee_id', 'parent_id', 'meta'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

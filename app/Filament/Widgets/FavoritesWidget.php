@@ -25,12 +25,19 @@ class FavoritesWidget extends BaseWidget
             ->query(fn (): Builder => Favorite::query()
                 ->where('user_id', auth()->id())
                 ->latest()
-                ->limit(10),
+                ->limit(3),
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->sortable()
-                    ->limit(60),
+                    ->limit(60)
+                    ->url(fn (Favorite $record): ?string => match (true) {
+                        $record->url !== null => $record->url,
+                        $record->favoritable_type === Item::class => ItemResource::getUrl('view', ['record' => $record->favoritable_id]),
+                        $record->favoritable_type === User::class => null,
+                        default => null,
+                    })
+                    ->openUrlInNewTab(fn (Favorite $record): bool => $record->url !== null),
 
                 Tables\Columns\TextColumn::make('type_badge')
                     ->label('Type')

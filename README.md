@@ -2,6 +2,8 @@
 
 A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Redmine-alternative.
 
+![Dashboard](docs/images/dashboard.png)
+
 ## Stack
 
 - PHP 8.3+
@@ -14,52 +16,9 @@ A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Red
 
 ---
 
-## Quick start
+## Local development
 
-### 🐳 Docker
-
-Проект поддерживает два окружения: **production** (самодостаточный образ) и **development** (с hot-reload и отладкой).
-
-```bash
-# Production — всё зашито в образ, порт 8000
-docker compose --profile prod up --build
-
-# Development — код монтируется через volume, Vite HMR :5173
-docker compose --profile dev up --build
-```
-
-Open **http://localhost:8000** and log in with:
-- Email: `admin@example.com`
-- Password: `password`
-
-Entrypoint автоматически создаст `.env`, `APP_KEY`, БД, миграции и сиды при первом запуске.
-
----
-
-### 🔧 Local setup
-
-```bash
-# 1. Install PHP dependencies
-composer install
-
-# 2. Configure environment
-cp .env.example .env
-php artisan key:generate
-
-# 3. Install & build frontend
-npm install
-npm run build
-
-# 4. Run migrations + seed
-php artisan migrate --seed
-
-# 5. Start dev server
-php artisan serve
-```
-
-Open **http://localhost:8000** and log in with:
-- Email: `admin@example.com`
-- Password: `password`
+See [docs/wiki/development.md](docs/wiki/development.md).
 
 ---
 
