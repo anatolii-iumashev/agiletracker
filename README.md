@@ -7,11 +7,11 @@ A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Red
 ## Stack
 
 - PHP 8.3+
-- Laravel 11
-- FilamentPHP 3
+- Laravel 13
+- FilamentPHP 5
 - Spatie Laravel Permission (roles)
 - Spatie Laravel Activitylog (change history)
-- Tailwind CSS (via Filament)
+- Tailwind CSS v4 (via Filament)
 - SQLite / MySQL / PostgreSQL
 
 ---
@@ -21,6 +21,16 @@ A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Red
 See [docs/wiki/development.md](docs/wiki/development.md).
 
 ---
+
+### 📦 Makefile
+
+| Command | Description |
+|---|---|
+| `make dev` | Full dev server (serve + queue + logs + vite) |
+| `make serve` | `php artisan serve` only |
+| `make test` | Run all tests |
+| `make db-fresh-seed` | Reset DB + seed |
+| `make build` | Build frontend assets |
 
 ## AI Agent Configuration (`.agents/`)
 

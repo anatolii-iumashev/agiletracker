@@ -1,0 +1,50 @@
+# =============================================================================
+# AgileTracker — Docker Development Image
+# Optimised for DX: Xdebug, Vite HMR, queue worker, live reload
+# =============================================================================
+
+# ─── Stage 1: Base (PHP + extensions) ──────────────────────────────────────
+FROM php:8.3-cli AS base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        git \
+        unzip \
+        zip \
+        libzip-dev \
+        libonig-dev \
+        libicu-dev \
+        libsqlite3-dev \
+        sqlite3 \
+        nodejs \
+        npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    intl \
+    pdo \
+    pdo_sqlite \
+    mbstring \
+    bcmath \
+    zip
+
+# Install Xdebug
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+# Copy Composer from official image
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+# No source code is copied — mounted as volume in dev mode
+# No vendor — installed at runtime via entrypoint or mounted
+
+EXPOSE 8000 5173
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

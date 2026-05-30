@@ -1,0 +1,64 @@
+# Git
+.git
+.gitattributes
+.gitignore
+.github
+
+# PHP
+vendor/
+
+# Node
+node_modules/
+
+# Build assets
+public/build/
+public/hot
+
+# Environment
+.env
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Laravel
+storage/framework/cache/data/*
+!storage/framework/cache/data/.gitkeep
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+storage/framework/views/*
+!storage/framework/views/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+
+# Project docs
+docs/
+*.md
+
+# Project config
+AGENTS.md
+CHANGELOG.md
+LICENSE
+MARKETING.md
+PRODUCT.md
+ROADMAP.md
+boost.json
+opencode.json
+skills-lock.json
+Makefile
+phpunit.xml
