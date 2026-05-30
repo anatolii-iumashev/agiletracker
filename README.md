@@ -5,44 +5,55 @@ A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Red
 ## Stack
 
 - PHP 8.3+
-- Laravel 11
-- FilamentPHP 3
+- Laravel 13
+- FilamentPHP 5
 - Spatie Laravel Permission (roles)
 - Spatie Laravel Activitylog (change history)
-- Tailwind CSS (via Filament)
+- Tailwind CSS v4 (via Filament)
 - SQLite / MySQL / PostgreSQL
 
 ---
 
 ## Quick start
 
+### 🐳 Docker
+
+Проект поддерживает два окружения: **production** (самодостаточный образ) и **development** (с hot-reload и отладкой).
+
 ```bash
-# 1. Create a Laravel project and copy these files into it
-composer create-project laravel/laravel agile-tracker
-cd agile-tracker
+# Production — всё зашито в образ, порт 8000
+docker compose --profile prod up --build
 
-# 2. Install dependencies
-composer require filament/filament:"^3.0" -W
-composer require spatie/laravel-permission
-composer require spatie/laravel-activitylog
+# Development — код монтируется через volume, Vite HMR :5173
+docker compose --profile dev up --build
+```
 
-# 3. Publish Filament panel
-php artisan filament:install --panels
+Open **http://localhost:8000** and log in with:
+- Email: `admin@example.com`
+- Password: `password`
 
-# 4. Publish vendor configs
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-php artisan vendor:publish \
-    --provider="Spatie\Activitylog\ActivitylogServiceProvider" \
-    --tag="activitylog-migrations"
+Entrypoint автоматически создаст `.env`, `APP_KEY`, БД, миграции и сиды при первом запуске.
 
-# 5. Configure .env (DB, APP_URL, etc.)
+---
+
+### 🔧 Local setup
+
+```bash
+# 1. Install PHP dependencies
+composer install
+
+# 2. Configure environment
 cp .env.example .env
 php artisan key:generate
 
-# 6. Run migrations + seed
+# 3. Install & build frontend
+npm install
+npm run build
+
+# 4. Run migrations + seed
 php artisan migrate --seed
 
-# 7. Start dev server
+# 5. Start dev server
 php artisan serve
 ```
 
@@ -51,6 +62,16 @@ Open **http://localhost:8000** and log in with:
 - Password: `password`
 
 ---
+
+### 📦 Makefile
+
+| Command | Description |
+|---|---|
+| `make dev` | Full dev server (serve + queue + logs + vite) |
+| `make serve` | `php artisan serve` only |
+| `make test` | Run all tests |
+| `make db-fresh-seed` | Reset DB + seed |
+| `make build` | Build frontend assets |
 
 ## AI Agent Configuration (`.agents/`)
 
