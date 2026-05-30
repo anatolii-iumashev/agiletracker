@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -24,27 +25,27 @@ class DatabaseSeeder extends Seeder
 
         // ─── Users ────────────────────────────────────────────────────────
 
-        $admin = User::firstOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
-            ['name' => 'Admin', 'password' => 'password']
+            ['name' => 'Admin', 'password' => Hash::make('password')]
         );
         $admin->assignRole('admin');
 
-        $alice = User::firstOrCreate(
+        $alice = User::updateOrCreate(
             ['email' => 'alice@example.com'],
-            ['name' => 'Alice Johnson', 'password' => 'password']
+            ['name' => 'Alice Johnson', 'password' => Hash::make('password')]
         );
         $alice->assignRole('manager');
 
-        $bob = User::firstOrCreate(
+        $bob = User::updateOrCreate(
             ['email' => 'bob@example.com'],
-            ['name' => 'Bob Williams', 'password' => 'password']
+            ['name' => 'Bob Williams', 'password' => Hash::make('password')]
         );
         $bob->assignRole('user');
 
-        $carol = User::firstOrCreate(
+        $carol = User::updateOrCreate(
             ['email' => 'carol@example.com'],
-            ['name' => 'Carol Davis', 'password' => 'password']
+            ['name' => 'Carol Davis', 'password' => Hash::make('password')]
         );
         $carol->assignRole('user');
 

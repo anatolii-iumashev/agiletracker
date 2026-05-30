@@ -4,6 +4,10 @@
     - check this https://filamentphp.com/docs/5.x/introduction/ai
     - это что такое? /Users/aa/Projects/agiletracker/lang/vendor/filament-panels
     - AdminPanelProvider - переименовать в MainPanelProvider + id = main и юзать для всех панелей
+    - http://localhost:8001/items - тут не нужен экшен Convert type
+    - $navigationGroup = 'Work' - надо поменять на Collections
+    - http://localhost:8001/items - заменить на http://localhost:8001/search
+    - тут ошибка http://localhost:8001/items/4/edit 
 
 ## Upcoming
 
