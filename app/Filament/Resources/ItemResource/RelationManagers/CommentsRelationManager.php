@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\ItemResource\RelationManagers;
 
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -40,15 +43,15 @@ class CommentsRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->mutateFormDataUsing(function (array $data) {
                         $data['user_id'] = auth()->id();
                         return $data;
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 }

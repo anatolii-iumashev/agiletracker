@@ -3,7 +3,7 @@
 - [ ] alfa 1
     - check this https://filamentphp.com/docs/5.x/introduction/ai
     - это что такое? /Users/aa/Projects/agiletracker/lang/vendor/filament-panels
-    
+    - AdminPanelProvider - переименовать в MainPanelProvider + id = main и юзать для всех панелей
 
 ## Upcoming
 

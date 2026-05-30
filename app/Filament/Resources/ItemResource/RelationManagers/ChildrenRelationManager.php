@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\ItemResource\RelationManagers;
 
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -79,10 +82,10 @@ class ChildrenRelationManager extends RelationManager
                         'danger'  => 'critical',
                     ]),
             ])
-            ->headerActions([Tables\Actions\CreateAction::make()])
+            ->headerActions([CreateAction::make()])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 }

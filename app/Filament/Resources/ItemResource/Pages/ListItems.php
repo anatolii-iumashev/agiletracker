@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Resources\Pages\ListRecords\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListItems extends ListRecords

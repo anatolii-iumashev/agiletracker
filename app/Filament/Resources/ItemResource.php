@@ -7,6 +7,10 @@ use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Item;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -232,8 +236,8 @@ class ItemResource extends Resource
                     ->relationship('assignee', 'name'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('convert')
+                EditAction::make(),
+                Action::make('convert')
                     ->label('Convert type')
                     ->icon('heroicon-o-arrow-path')
                     ->form([
@@ -250,7 +254,7 @@ class ItemResource extends Resource
                     ->action(fn ($record, array $data) => $record->convertTo($data['new_type'])),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('assign')
+                BulkAction::make('assign')
                     ->label('Assign to…')
                     ->form([
                         Forms\Components\Select::make('assignee_id')
@@ -262,7 +266,7 @@ class ItemResource extends Resource
                         $records->each->update(['assignee_id' => $data['assignee_id']])
                     ),
 
-                Tables\Actions\DeleteBulkAction::make(),
+                DeleteBulkAction::make(),
             ])
             ->reorderable('position')
             ->defaultSort('position');

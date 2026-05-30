@@ -46,7 +46,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-Open **http://localhost:8000/admin** and log in with:
+Open **http://localhost:8000** and log in with:
 - Email: `admin@example.com`
 - Password: `password`
 

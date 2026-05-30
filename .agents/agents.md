@@ -47,5 +47,5 @@ A minimal project & task manager (Jira/Redmine alternative) built with **Laravel
 
 ## Filament Panel
 - Panel ID: `admin`
-- Path: `/admin`
+- Path: `/` (root)
 - Default admin: `admin@example.com`

@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Models\Label;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -41,8 +43,8 @@ class LabelResource extends Resource
                     ->label('Items'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 
