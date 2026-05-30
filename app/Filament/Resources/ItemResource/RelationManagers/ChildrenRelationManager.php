@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 class ChildrenRelationManager extends RelationManager
 {
     protected static string $relationship = 'children';
+
     protected static ?string $title = 'Sub-items';
 
     public function form(Schema $schema): Schema
@@ -34,18 +35,18 @@ class ChildrenRelationManager extends RelationManager
 
             Forms\Components\Select::make('status')
                 ->options([
-                    'todo'        => 'To Do',
+                    'todo' => 'To Do',
                     'in_progress' => 'In Progress',
-                    'review'      => 'Review',
-                    'done'        => 'Done',
+                    'review' => 'Review',
+                    'done' => 'Done',
                 ])
                 ->default('todo'),
 
             Forms\Components\Select::make('priority')
                 ->options([
-                    'low'      => 'Low',
-                    'medium'   => 'Medium',
-                    'high'     => 'High',
+                    'low' => 'Low',
+                    'medium' => 'Medium',
+                    'high' => 'High',
                     'critical' => 'Critical',
                 ])
                 ->default('medium'),
@@ -56,30 +57,33 @@ class ChildrenRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
+                    ->badge()
                     ->colors([
                         'primary' => 'project',
                         'warning' => 'epic',
                         'success' => 'task',
-                        'gray'    => 'case',
+                        'gray' => 'case',
                     ]),
 
                 Tables\Columns\TextColumn::make('title')->searchable()->limit(50),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->colors([
-                        'gray'    => 'todo',
+                        'gray' => 'todo',
                         'warning' => 'in_progress',
-                        'info'    => 'review',
+                        'info' => 'review',
                         'success' => 'done',
                     ]),
 
-                Tables\Columns\BadgeColumn::make('priority')
+                Tables\Columns\TextColumn::make('priority')
+                    ->badge()
                     ->colors([
-                        'gray'    => 'low',
+                        'gray' => 'low',
                         'primary' => 'medium',
                         'warning' => 'high',
-                        'danger'  => 'critical',
+                        'danger' => 'critical',
                     ]),
             ])
             ->headerActions([CreateAction::make()])

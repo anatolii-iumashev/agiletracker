@@ -11,13 +11,6 @@
 
 ## Upcoming
 
-### Setup & DX
-
-- [ ] `composer require filament/filament` — install Filament PHP
-- [ ] `php artisan filament:install --panels` — scaffold admin panel
-- [ ] `php artisan boost:install` (re-run) — pull in Filament guidelines to AGENTS.md
-- [ ] `npm install` + `npm run build` — frontend
-
 ### Core features (MVP)
 
 - [ ] Item CRUD (Filament Resource) — tasks/bugs/features with fields and statuses

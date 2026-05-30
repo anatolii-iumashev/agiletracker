@@ -16,15 +16,19 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class ItemResource extends Resource
 {
     protected static ?string $model = Item::class;
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-queue-list';
+
     protected static UnitEnum|string|null $navigationGroup = 'Work';
+
+    protected static ?string $slug = 'i';
+
     protected static ?int $navigationSort = 1;
 
     // ─── Global search ────────────────────────────────────────────────────────
@@ -49,10 +53,10 @@ class ItemResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('type')
                         ->options([
-                            'task'    => 'Task',
-                            'epic'    => 'Epic',
+                            'task' => 'Task',
+                            'epic' => 'Epic',
                             'project' => 'Project',
-                            'case'    => 'Case',
+                            'case' => 'Case',
                         ])
                         ->required()
                         ->live()
@@ -77,19 +81,19 @@ class ItemResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('status')
                         ->options([
-                            'todo'        => 'To Do',
+                            'todo' => 'To Do',
                             'in_progress' => 'In Progress',
-                            'review'      => 'Review',
-                            'done'        => 'Done',
+                            'review' => 'Review',
+                            'done' => 'Done',
                         ])
                         ->required()
                         ->default('todo'),
 
                     Forms\Components\Select::make('priority')
                         ->options([
-                            'low'      => 'Low',
-                            'medium'   => 'Medium',
-                            'high'     => 'High',
+                            'low' => 'Low',
+                            'medium' => 'Medium',
+                            'high' => 'High',
                             'critical' => 'Critical',
                         ])
                         ->required()
@@ -121,8 +125,8 @@ class ItemResource extends Resource
                         ->label('Parent')
                         ->options(fn (Forms\Get $get) => Item::query()
                             ->whereIn('type', match ($get('type')) {
-                                'task'  => ['epic', 'project'],
-                                'epic'  => ['project'],
+                                'task' => ['epic', 'project'],
+                                'epic' => ['project'],
                                 default => [],
                             })
                             ->pluck('title', 'id')
@@ -165,12 +169,13 @@ class ItemResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
+                    ->badge()
                     ->colors([
                         'primary' => 'project',
                         'warning' => 'epic',
                         'success' => 'task',
-                        'gray'    => 'case',
+                        'gray' => 'case',
                     ]),
 
                 Tables\Columns\TextColumn::make('title')
@@ -178,20 +183,22 @@ class ItemResource extends Resource
                     ->sortable()
                     ->limit(60),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->colors([
-                        'gray'    => 'todo',
+                        'gray' => 'todo',
                         'warning' => 'in_progress',
-                        'info'    => 'review',
+                        'info' => 'review',
                         'success' => 'done',
                     ]),
 
-                Tables\Columns\BadgeColumn::make('priority')
+                Tables\Columns\TextColumn::make('priority')
+                    ->badge()
                     ->colors([
-                        'gray'    => 'low',
+                        'gray' => 'low',
                         'primary' => 'medium',
                         'warning' => 'high',
-                        'danger'  => 'critical',
+                        'danger' => 'critical',
                     ]),
 
                 Tables\Columns\TextColumn::make('assignee.name')
@@ -210,25 +217,25 @@ class ItemResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->options([
-                        'task'    => 'Task',
-                        'epic'    => 'Epic',
+                        'task' => 'Task',
+                        'epic' => 'Epic',
                         'project' => 'Project',
-                        'case'    => 'Case',
+                        'case' => 'Case',
                     ]),
 
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'todo'        => 'To Do',
+                        'todo' => 'To Do',
                         'in_progress' => 'In Progress',
-                        'review'      => 'Review',
-                        'done'        => 'Done',
+                        'review' => 'Review',
+                        'done' => 'Done',
                     ]),
 
                 Tables\Filters\SelectFilter::make('priority')
                     ->options([
-                        'low'      => 'Low',
-                        'medium'   => 'Medium',
-                        'high'     => 'High',
+                        'low' => 'Low',
+                        'medium' => 'Medium',
+                        'high' => 'High',
                         'critical' => 'Critical',
                     ]),
 
@@ -244,10 +251,10 @@ class ItemResource extends Resource
                         Forms\Components\Select::make('new_type')
                             ->label('Convert to')
                             ->options(fn ($record) => match ($record->type) {
-                                'task'    => ['epic' => 'Epic', 'project' => 'Project'],
-                                'epic'    => ['task' => 'Task', 'project' => 'Project'],
+                                'task' => ['epic' => 'Epic', 'project' => 'Project'],
+                                'epic' => ['task' => 'Task', 'project' => 'Project'],
                                 'project' => ['epic' => 'Epic'],
-                                default   => [],
+                                default => [],
                             })
                             ->required(),
                     ])
@@ -262,8 +269,7 @@ class ItemResource extends Resource
                             ->options(User::pluck('name', 'id'))
                             ->required(),
                     ])
-                    ->action(fn ($records, array $data) =>
-                        $records->each->update(['assignee_id' => $data['assignee_id']])
+                    ->action(fn ($records, array $data) => $records->each->update(['assignee_id' => $data['assignee_id']])
                     ),
 
                 DeleteBulkAction::make(),
@@ -277,9 +283,10 @@ class ItemResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListItems::route('/'),
+            'index' => Pages\ListItems::route('/'),
             'create' => Pages\CreateItem::route('/create'),
-            'edit'   => Pages\EditItem::route('/{record}/edit'),
+            'view' => Pages\ViewItem::route('/{record}'),
+            'edit' => Pages\EditItem::route('/{record}/edit'),
         ];
     }
 
