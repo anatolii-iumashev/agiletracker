@@ -7,6 +7,10 @@
 - Database: SQLite (dev/test), MySQL/PostgreSQL (prod)
 - License: MIT
 
+## Documentation sources for AI agents
+- Filament: https://filamentphp.com/docs/llms.txt
+- Laravel: https://laravel.com/docs/llms.txt
+
 ## Setup commands
 ```bash
 composer install
