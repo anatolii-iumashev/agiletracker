@@ -27,20 +27,23 @@
 - [ ] Kanban board (drag & drop, status columns)
 - [ ] Labels (tags) CRUD
 - [ ] Comments on Items
-- [ ] Assignee + Reporter relationship on Item
+- [ ] From + To relationship on Item
 - [ ] Dashboard with widgets (my tasks, recent activity)
 - [ ] Roles & permissions (admin, manager, user) via Spatie
+- [ ] Subtasks (parent_id in Item)
+
+### Phase 2
+- plugin-system - docs/rfc/2026-05-30-plugin-system.md 
 
 ### Future
 
-- [ ] Time tracking (estimated/spent in Item)
-- [ ] Subtasks (parent_id in Item)
 - [ ] Notifications (due date reminders, assignment alerts)
 - [ ] Search & filters (by status, priority, labels)
 - [ ] API (Laravel Sanctum + API Resources)
 - [ ] Tests (Unit + Feature, critical path coverage)
 
----
+## Plugins
+- [ ] Time tracking (estimated/spent in Item)
 
 ## Tooling evaluation
 

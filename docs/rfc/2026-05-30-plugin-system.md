@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Add a lightweight plugin system: plugins live in `plugins/` (sibling to `app/`), are activated via `config/plugins.php` + admin UI override, and extend the app through `tormjens/eventy` actions/filters — no marketplace, no strict module structure.
+Add a lightweight plugin system: plugins live in `plugins/` (sibling to `app/`), are activated via `config/plugins.php` + admin UI override, and extend the app through two complementary hook systems — `tormjens/eventy` (data/logic) and Filament Render Hooks (Blade/UI) — no marketplace, no strict module structure.
 
 ## Context
 
@@ -10,7 +10,9 @@ Add a lightweight plugin system: plugins live in `plugins/` (sibling to `app/`),
 
 A plugin system that allows third-party code to hook into AgileTracker without modifying core files. Each plugin is a folder in `plugins/` with a `plugin.json` descriptor and free-form `src/` code. The system consists of three parts:
 
-1. **Hook engine** (`tormjens/eventy`) — WordPress-style actions and filters.
+1. **Hook engines** — two complementary systems:
+   - `tormjens/eventy` — WordPress-style actions/filters for data and logic hooks.
+   - Filament Render Hooks (`FilamentView::registerRenderHook()`) — native Blade injection at 70+ layout points (sidebar, topbar, page header, table toolbar, etc.).
 2. **Plugin loader** — discovers, validates, and bootstraps active plugins.
 3. **Admin UI** (Filament page) — list plugins, toggle activation, view metadata.
 
@@ -45,6 +47,7 @@ AgileTracker's core must remain small. Custom features (e.g., time tracking, cus
 | `bootstrap/providers.php` | Register `PluginManager` in container |
 | `plugins/` | **New** — root directory for all plugins |
 | `plugins/_example/` | **New** — reference/starter plugin |
+| `plugins/hello-world/` | **New** — working example with both hook systems |
 
 ### Plugin metadata (`plugin.json`)
 
@@ -76,17 +79,79 @@ plugins/
 │   ├── plugin.json
 │   └── src/
 │       └── ExampleServiceProvider.php
-├── my-plugin/
+├── hello-world/            # working example using both hook systems
 │   ├── plugin.json
 │   └── src/
-│       ├── MyPluginServiceProvider.php
-│       ├── Hooks/         # eventy listeners (convention, not enforced)
-│       ├── routes.php     # optional — auto-loaded if exists
-│       ├── database/
-│       │   └── migrations/
+│       ├── HelloWorldServiceProvider.php
 │       └── resources/
-│           └── views/     # auto-registered as namespace: plugins::my-plugin
+│           └── views/
+│               └── hello-message.blade.php
 ```
+
+### `hello-world` — working example plugin
+
+Bundled example that demonstrates both hook systems with a real, functional plugin:
+
+**`plugin.json`:**
+```json
+{
+    "name": "Hello World",
+    "alias": "hello-world",
+    "version": "1.0.0",
+    "description": "Demonstrates hook systems: adds a greeting to the user menu and a banner to the dashboard",
+    "providers": [
+        "Plugins\\HelloWorld\\HelloWorldServiceProvider"
+    ]
+}
+```
+
+**`HelloWorldServiceProvider.php`:**
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Plugins\HelloWorld;
+
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\ServiceProvider;
+
+class HelloWorldServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // 1. Filament Render Hook — injects a banner above dashboard content
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::CONTENT_BEFORE,
+            fn (): string => view('plugins::hello-world.hello-message')->render(),
+            scopes: \App\Filament\Pages\Dashboard::class,
+        );
+
+        // 2. Eventy Filter — modifies navigation items
+        \Eventy::addFilter('navigation.items', function (array $items) {
+            // Plugin could add/remove/reorder items
+            return $items;
+        }, 20, 1);
+    }
+}
+```
+
+**`resources/views/hello-message.blade.php`:**
+```blade
+<div class="px-4 py-3 mb-4 bg-primary-50 border border-primary-200 rounded-lg">
+    <p class="text-sm text-primary-700 font-medium">
+        Hello from <strong>Hello World</strong> plugin!
+        This banner is injected via Filament Render Hook.
+    </p>
+</div>
+```
+
+**What it demonstrates:**
+- Filament Render Hook: injects Blade into dashboard via `CONTENT_BEFORE`, scoped to `Dashboard::class`
+- Eventy Filter: subscribes to `navigation.items` (ready for extension)
+- Auto-loaded view namespace: `plugins::hello-world` → `resources/views/`
+- Minimal structure: one provider, one view, one `plugin.json`
 
 ### PluginManager — lifecycle
 
@@ -96,6 +161,8 @@ plugins/
 4. **Hook registration**: each provider's `boot()` method calls `Eventy::addAction()` / `Eventy::addFilter()`.
 
 ### Hook system (`tormjens/eventy`)
+
+Eventy provides WordPress-style actions and filters for data/logic extension points:
 
 ```php
 // Core declares a hook point:
@@ -115,9 +182,63 @@ Eventy::addAction('item.show.sidebar', function ($item) {
 }, 20, 1);
 ```
 
+### Hook system (Filament Render Hooks)
+
+Filament natively provides **70+ render hooks** for Blade injection at specific layout positions. Plugins register them via `FilamentView::registerRenderHook()`:
+
+```php
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+
+// Inject content after the page header
+FilamentView::registerRenderHook(
+    PanelsRenderHook::PAGE_HEADER_WIDGETS_AFTER,
+    fn (): View => view('plugins::my-plugin.header-widget'),
+);
+
+// Scoped to a specific resource page
+FilamentView::registerRenderHook(
+    PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_AFTER,
+    fn (): View => view('plugins::my-plugin.table-footer'),
+    scopes: \App\Filament\Resources\ItemResource\Pages\ListItems::class,
+);
+```
+
+**Key render hooks relevant to AgileTracker:**
+
+| Enum constant | Injection point | Scopable |
+|---|---|---|
+| `CONTENT_BEFORE` / `CONTENT_AFTER` | Before/after page content | ✅ Page class |
+| `PAGE_HEADER_WIDGETS_BEFORE` / `AFTER` | Around page header widgets | ✅ Page/Resource |
+| `PAGE_START` / `PAGE_END` | Start/end of page container | ✅ Page/Resource |
+| `RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE` / `AFTER` | Around resource table | ✅ Page/Resource |
+| `RESOURCE_TABS_START` / `RESOURCE_TABS_END` | Around resource tabs | ✅ Resource class |
+| `SIDEBAR_NAV_START` / `SIDEBAR_NAV_END` | Inside sidebar `<nav>` | — |
+| `SIDEBAR_FOOTER` | Pinned to sidebar bottom | — |
+| `TOPBAR_START` / `TOPBAR_END` | Inside topbar | — |
+| `USER_MENU_AFTER` / `BEFORE` | Around user menu | — |
+| `BODY_START` / `BODY_END` | Body open/close | — |
+| `HEAD_START` / `HEAD_END` | Head open/close | — |
+| `SCRIPTS_BEFORE` / `SCRIPTS_AFTER` | Around scripts block | — |
+| `STYLES_BEFORE` / `STYLES_AFTER` | Around styles block | — |
+| `AUTH_LOGIN_FORM_AFTER` / `BEFORE` | Around login form | — |
+
+Full list: `Filament\View\PanelsRenderHook`, `Filament\Tables\View\TablesRenderHook`, `Filament\Actions\View\ActionsRenderHook`, `Filament\Widgets\View\WidgetsRenderHook`.
+
+**Scoping** allows render hooks to target specific pages or resources. Plugin providers register these in `boot()`, using `FilamentView::registerRenderHook()`.
+
+### Dual hook strategy
+
+| Use case | System |
+|---|---|
+| Inject Blade HTML at layout points | Filament Render Hooks |
+| Modify queries, data, arrays, configs | Eventy filters |
+| Execute side effects at code points | Eventy actions |
+| Add scripts/styles | Filament Render Hooks (`SCRIPTS_AFTER`, `STYLES_AFTER`) |
+
 **Naming convention**: `{component}.{event}` — e.g., `items.table.query`, `item.show.sidebar`, `dashboard.widgets`. Plugin-specific hooks use `{plugin-alias}.{event}`.
 
-**Initial core hook points** (MVP set):
+**Initial Eventy core hook points** (MVP set):
 
 | Hook | Type | Location | Args |
 |---|---|---|---|
@@ -187,9 +308,18 @@ Is plugin active?
 
 ### Dependencies
 
-- `tormjens/eventy` ^0.9 — WordPress-style actions and filters.
-- Existing Filament 5 — admin UI.
+- `tormjens/eventy` ^0.9 — WordPress-style actions and filters for data/logic hooks.
+- Existing Filament 5 — admin UI + native Render Hooks (`Filament\Support\Facades\FilamentView`).
 - Existing `spatie/laravel-permission` — role-based access control for admin page.
+
+### Why two hook systems?
+
+Filament Render Hooks and Eventy solve different problems:
+
+- **Filament Render Hooks** are Blade-level — they inject HTML into the layout (sidebar, topbar, page header, table). Perfect for: adding a widget, extra column, banner, or script. 70+ injection points, scoped to specific pages/resources. Zero extra dependency — built into Filament.
+- **Eventy** is code-level — it hooks into PHP logic (queries, collections, data). Perfect for: modifying an Eloquent query, changing config arrays, running side effects. No HTML — pure data/logic.
+
+Plugin providers use both: Render Hooks for UI injection, Eventy for backend hooks. They complement each other, not compete.
 
 ## Acceptance Criteria
 
@@ -201,13 +331,16 @@ Is plugin active?
 - [ ] `plugins:discover` artisan command flushes and rebuilds the plugin manifest.
 - [ ] Active plugin ServiceProviders are registered in Laravel container on boot.
 - [ ] `plugins/_example` reference plugin exists and demonstrates hook usage.
+- [ ] `plugins/hello-world` example plugin exists and is activatable — injects a banner into dashboard via Filament Render Hook, subscribes to `navigation.items` via Eventy.
 - [ ] `PluginPage` Filament page lists all discovered plugins with toggles under Settings group.
 - [ ] Only `admin` role can access PluginPage (404 for manager/user).
 - [ ] Toggling a plugin in admin UI persists to `plugins` table and takes effect on next request.
 - [ ] DB activation overrides `config('plugins.active')` (admin UI wins).
 - [ ] Deleted plugin folders don't crash the app — skipped with a log warning.
 - [ ] `Eventy` hooks work: plugins can subscribe to core filter/action points.
-- [ ] At least 6 core hook points exist and are documented (table query, columns, form fields, item content, dashboard widgets, navigation).
+- [ ] Filament Render Hooks work: plugins can inject Blade content via `FilamentView::registerRenderHook()`.
+- [ ] At least 6 Eventy core hook points exist and are documented.
+- [ ] The dual hook strategy is documented: Eventy for data/logic, Filament Render Hooks for UI injection.
 - [ ] `./vendor/bin/pint` passes.
 - [ ] `php artisan test` passes (including new Plugin system tests).
 
