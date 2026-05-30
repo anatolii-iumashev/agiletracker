@@ -34,7 +34,7 @@ class InboxWidget extends BaseWidget
             ->query(fn (): Builder => Item::query()
                 ->whereHas('to', fn (Builder $q) => $q->where('user_id', auth()->id()))
                 ->orderBy('position')
-                ->limit(10)
+                ->limit(3)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('title')

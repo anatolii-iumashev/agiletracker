@@ -2,6 +2,8 @@
 
 A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Redmine-alternative.
 
+![Dashboard](docs/images/dashboard.png)
+
 ## Stack
 
 - PHP 8.3+

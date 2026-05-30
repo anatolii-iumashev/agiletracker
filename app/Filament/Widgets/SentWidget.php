@@ -23,7 +23,7 @@ class SentWidget extends BaseWidget
             ->query(fn (): Builder => Item::query()
                 ->where('reporter_id', auth()->id())
                 ->orderBy('position')
-                ->limit(10)
+                ->limit(3)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('title')

@@ -25,7 +25,7 @@ class FavoritesWidget extends BaseWidget
             ->query(fn (): Builder => Favorite::query()
                 ->where('user_id', auth()->id())
                 ->latest()
-                ->limit(10),
+                ->limit(3),
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')

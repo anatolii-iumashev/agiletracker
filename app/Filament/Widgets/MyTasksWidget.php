@@ -20,7 +20,7 @@ class MyTasksWidget extends BaseWidget
                 Item::query()
                     ->where('assignee_id', auth()->id())
                     ->orderBy('due_date')
-                    ->limit(10)
+                    ->limit(3)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('labels.name')

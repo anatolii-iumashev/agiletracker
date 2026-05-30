@@ -6,8 +6,8 @@
     - [x] Dashboard - add table Sent - sent items
     - [x] Inbox - add From field - and to Dashboard widget
     - [x] Sent - add To and CC fields - and to Dashboard widget
-    - [ ] Favorites - title clickable - to url or object page
-    - [ ] database/seeders/DatabaseSeeder.php 
+    - [x] Favorites - title clickable - to url or object page
+    - [x] database/seeders/DatabaseSeeder.php 
         - разбить - данные для авторизации - пользователи отдельно и демо данные для тестов отдельно
         - по 3 записи в Inbox, Sent & Favorites для admin@example.com
 - [ ] Alfa 3
