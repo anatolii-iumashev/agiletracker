@@ -1,6 +1,5 @@
 ---
-id: code-review
-name: Code Review Expert
+name: code-review
 description: Review PHP/Laravel code for quality, security, and performance
 enabled: true
 ---

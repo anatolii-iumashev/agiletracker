@@ -7,12 +7,13 @@ use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Item;
 use App\Models\User;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -48,7 +49,7 @@ class ItemResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Section::make('Overview')
+            Section::make('Overview')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Select::make('type')
@@ -76,7 +77,7 @@ class ItemResource extends Resource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('Status & Priority')
+            Section::make('Status & Priority')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Select::make('status')
@@ -100,7 +101,7 @@ class ItemResource extends Resource
                         ->default('medium'),
                 ]),
 
-            Forms\Components\Section::make('People')
+            Section::make('People')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Select::make('assignee_id')
@@ -119,11 +120,11 @@ class ItemResource extends Resource
                         ->nullable(),
                 ]),
 
-            Forms\Components\Section::make('Hierarchy')
+            Section::make('Hierarchy')
                 ->schema([
                     Forms\Components\Select::make('parent_id')
                         ->label('Parent')
-                        ->options(fn (Forms\Get $get) => Item::query()
+                        ->options(fn (Get $get) => Item::query()
                             ->whereIn('type', match ($get('type')) {
                                 'task' => ['epic', 'project'],
                                 'epic' => ['project'],
@@ -145,7 +146,7 @@ class ItemResource extends Resource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('Scheduling')
+            Section::make('Scheduling')
                 ->columns(3)
                 ->schema([
                     Forms\Components\DatePicker::make('due_date')->nullable(),
@@ -181,7 +182,8 @@ class ItemResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->limit(60),
+                    ->limit(60)
+                    ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -244,21 +246,6 @@ class ItemResource extends Resource
             ])
             ->actions([
                 EditAction::make(),
-                Action::make('convert')
-                    ->label('Convert type')
-                    ->icon('heroicon-o-arrow-path')
-                    ->form([
-                        Forms\Components\Select::make('new_type')
-                            ->label('Convert to')
-                            ->options(fn ($record) => match ($record->type) {
-                                'task' => ['epic' => 'Epic', 'project' => 'Project'],
-                                'epic' => ['task' => 'Task', 'project' => 'Project'],
-                                'project' => ['epic' => 'Epic'],
-                                default => [],
-                            })
-                            ->required(),
-                    ])
-                    ->action(fn ($record, array $data) => $record->convertTo($data['new_type'])),
             ])
             ->bulkActions([
                 BulkAction::make('assign')
