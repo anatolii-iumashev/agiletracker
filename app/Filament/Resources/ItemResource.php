@@ -135,19 +135,6 @@ class ItemResource extends Resource
                         ->nullable(),
                 ]),
 
-            Section::make('Time')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('estimated_minutes')
-                        ->label('Estimate (minutes)')
-                        ->numeric()
-                        ->nullable(),
-
-                    Forms\Components\TextInput::make('spent_minutes')
-                        ->label('Spent (minutes)')
-                        ->numeric()
-                        ->default(0),
-                ]),
         ]);
     }
 
@@ -181,13 +168,6 @@ class ItemResource extends Resource
                             ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
                             ->default('—'),
 
-                        Infolists\Components\TextEntry::make('estimated_minutes')
-                            ->label('Est. (min)')
-                            ->default('—'),
-
-                        Infolists\Components\TextEntry::make('spent_minutes')
-                            ->label('Spent (min)')
-                            ->default('—'),
                     ]),
 
                 Section::make('Participants')

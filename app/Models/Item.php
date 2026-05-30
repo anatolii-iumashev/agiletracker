@@ -29,8 +29,6 @@ class Item extends Model
         'end_date',
         'etd_date',
         'eta_date',
-        'estimated_minutes',
-        'spent_minutes',
         'position',
         'to',
         'cc',
@@ -42,8 +40,6 @@ class Item extends Model
         'end_date' => 'date',
         'etd_date' => 'date',
         'eta_date' => 'date',
-        'estimated_minutes' => 'integer',
-        'spent_minutes' => 'integer',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -108,18 +104,6 @@ class Item extends Model
     public function scopeWithLabel($query, string $labelName)
     {
         return $query->whereHas('labels', fn ($q) => $q->where('name', $labelName));
-    }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    public function getEstimatedHoursAttribute(): ?float
-    {
-        return $this->estimated_minutes ? round($this->estimated_minutes / 60, 1) : null;
-    }
-
-    public function getSpentHoursAttribute(): float
-    {
-        return round($this->spent_minutes / 60, 1);
     }
 
     // ─── Activity log ─────────────────────────────────────────────────────────
