@@ -1,0 +1,13 @@
+{
+  "toolConfig": {
+    "disabledServers": ["sqlite"],
+    "enabledBuiltinTools": ["read_file", "grep_search", "file_search", "get_errors"]
+  },
+  "modelConfig": {
+    "mcpToolsProviderId": "openai",
+    "mcpToolsOpenaiModel": "gpt-4o"
+  },
+  "connection": {
+    "type": "internal"
+  }
+}

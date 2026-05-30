@@ -6,26 +6,37 @@ use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Item;
 use App\Models\User;
+use BackedEnum;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Infolists;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class ItemResource extends Resource
 {
     protected static ?string $model = Item::class;
-    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
-    protected static ?string $navigationGroup = 'Work';
+
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-queue-list';
+
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
+
+    protected static ?string $slug = 'i';
+
     protected static ?int $navigationSort = 1;
 
     // ─── Global search ────────────────────────────────────────────────────────
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return "[{$record->type}] {$record->title}";
+        return $record->title;
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -35,27 +46,16 @@ class ItemResource extends Resource
 
     // ─── Form ─────────────────────────────────────────────────────────────────
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
-            Forms\Components\Section::make('Overview')
+        return $schema->schema([
+            Section::make('Overview')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\Select::make('type')
-                        ->options([
-                            'task'    => 'Task',
-                            'epic'    => 'Epic',
-                            'project' => 'Project',
-                            'case'    => 'Case',
-                        ])
-                        ->required()
-                        ->live()
-                        ->columnSpan(1),
-
                     Forms\Components\TextInput::make('title')
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan(1),
+                        ->columnSpanFull(),
 
                     Forms\Components\MarkdownEditor::make('description')
                         ->columnSpanFull()
@@ -66,64 +66,8 @@ class ItemResource extends Resource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('Status & Priority')
-                ->columns(2)
+            Section::make('Labels')
                 ->schema([
-                    Forms\Components\Select::make('status')
-                        ->options([
-                            'todo'        => 'To Do',
-                            'in_progress' => 'In Progress',
-                            'review'      => 'Review',
-                            'done'        => 'Done',
-                        ])
-                        ->required()
-                        ->default('todo'),
-
-                    Forms\Components\Select::make('priority')
-                        ->options([
-                            'low'      => 'Low',
-                            'medium'   => 'Medium',
-                            'high'     => 'High',
-                            'critical' => 'Critical',
-                        ])
-                        ->required()
-                        ->default('medium'),
-                ]),
-
-            Forms\Components\Section::make('People')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Select::make('assignee_id')
-                        ->label('Assignee')
-                        ->relationship('assignee', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->nullable(),
-
-                    Forms\Components\Select::make('reporter_id')
-                        ->label('Reporter')
-                        ->relationship('reporter', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->default(fn () => auth()->id())
-                        ->nullable(),
-                ]),
-
-            Forms\Components\Section::make('Hierarchy')
-                ->schema([
-                    Forms\Components\Select::make('parent_id')
-                        ->label('Parent')
-                        ->options(fn (Forms\Get $get) => Item::query()
-                            ->whereIn('type', match ($get('type')) {
-                                'task'  => ['epic', 'project'],
-                                'epic'  => ['project'],
-                                default => [],
-                            })
-                            ->pluck('title', 'id')
-                        )
-                        ->searchable()
-                        ->nullable(),
-
                     Forms\Components\Select::make('labels')
                         ->label('Labels')
                         ->relationship('labels', 'name')
@@ -131,15 +75,73 @@ class ItemResource extends Resource
                         ->preload()
                         ->createOptionForm([
                             Forms\Components\TextInput::make('name')->required(),
-                            Forms\Components\ColorPicker::make('color')->default('#6366f1'),
+                            Forms\Components\ColorPicker::make('color')->default('#6b7280'),
                         ]),
                 ]),
 
-            Forms\Components\Section::make('Scheduling')
+            Section::make('Participants')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('assignee_id')
+                        ->label('Responsible')
+                        ->relationship('assignee', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->nullable(),
+
+                    Forms\Components\Select::make('reporter_id')
+                        ->label('From')
+                        ->relationship('reporter', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->default(fn () => auth()->id())
+                        ->disabled()
+                        ->dehydrated(),
+
+                    Forms\Components\Select::make('to')
+                        ->label('To')
+                        ->relationship('to', 'name')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->columnSpanFull(),
+
+                    Forms\Components\Select::make('cc')
+                        ->label('CC')
+                        ->relationship('cc', 'name')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Hierarchy')
+                ->schema([
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Parent')
+                        ->relationship('parent', 'title')
+                        ->searchable()
+                        ->nullable(),
+                ]),
+
+            Section::make('Dates')
                 ->columns(3)
                 ->schema([
+                    Forms\Components\DatePicker::make('start_date')->nullable(),
+                    Forms\Components\DatePicker::make('end_date')->nullable(),
                     Forms\Components\DatePicker::make('due_date')->nullable(),
 
+                    Forms\Components\DatePicker::make('etd_date')
+                        ->label('ETD')
+                        ->nullable(),
+                    Forms\Components\DatePicker::make('eta_date')
+                        ->label('ETA')
+                        ->nullable(),
+                ]),
+
+            Section::make('Time')
+                ->columns(2)
+                ->schema([
                     Forms\Components\TextInput::make('estimated_minutes')
                         ->label('Estimate (minutes)')
                         ->numeric()
@@ -153,40 +155,116 @@ class ItemResource extends Resource
         ]);
     }
 
+    // ─── Infolist ─────────────────────────────────────────────────────────────
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Infolists\Components\TextEntry::make('description')
+                    ->hiddenLabel()
+                    ->markdown()
+                    ->default('No description.')
+                    ->columnSpanFull(),
+
+                Infolists\Components\TextEntry::make('labels.name')
+                    ->label('Labels')
+                    ->badge()
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
+                    ->default('—'),
+
+                Section::make('Participants')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('reporter.name')
+                            ->label('From')
+                            ->default('—'),
+
+                        Infolists\Components\TextEntry::make('assignee.name')
+                            ->label('Responsible')
+                            ->default('—'),
+
+                        Infolists\Components\TextEntry::make('to_names')
+                            ->label('To')
+                            ->state(fn (Item $record): string => $record->to->pluck('name')->join(', '))
+                            ->visible(fn (Item $record): bool => $record->to->isNotEmpty()),
+
+                        Infolists\Components\TextEntry::make('cc_names')
+                            ->label('CC')
+                            ->state(fn (Item $record): string => $record->cc->pluck('name')->join(', '))
+                            ->visible(fn (Item $record): bool => $record->cc->isNotEmpty()),
+                    ]),
+
+                Infolists\Components\TextEntry::make('parent.title')
+                    ->label('Parent')
+                    ->url(fn (?Item $record): ?string => $record?->parent
+                        ? ItemResource::getUrl('view', ['record' => $record->parent])
+                        : null
+                    )
+                    ->default('—'),
+
+                Section::make('Dates')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('due_date')
+                            ->label('Due date')
+                            ->state(fn ($record) => $record->due_date?->format('M j, Y') ?? '—')
+                            ->visible(fn ($record) => $record->due_date !== null),
+
+                        Infolists\Components\TextEntry::make('start_date')
+                            ->label('Start date')
+                            ->state(fn ($record) => $record->start_date?->format('M j, Y') ?? '—')
+                            ->visible(fn ($record) => $record->start_date !== null),
+
+                        Infolists\Components\TextEntry::make('end_date')
+                            ->label('End date')
+                            ->state(fn ($record) => $record->end_date?->format('M j, Y') ?? '—')
+                            ->visible(fn ($record) => $record->end_date !== null),
+
+                        Infolists\Components\TextEntry::make('etd_date')
+                            ->label('ETD')
+                            ->state(fn ($record) => $record->etd_date?->format('M j, Y') ?? '—')
+                            ->visible(fn ($record) => $record->etd_date !== null),
+
+                        Infolists\Components\TextEntry::make('eta_date')
+                            ->label('ETA')
+                            ->state(fn ($record) => $record->eta_date?->format('M j, Y') ?? '—')
+                            ->visible(fn ($record) => $record->eta_date !== null),
+
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Created')
+                            ->dateTime('M j, Y H:i'),
+
+                        Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Updated')
+                            ->dateTime('M j, Y H:i'),
+                    ])
+                    ->columns(2),
+
+                Infolists\Components\TextEntry::make('estimated_minutes')
+                    ->label('Est. (min)')
+                    ->default('—'),
+
+                Infolists\Components\TextEntry::make('spent_minutes')
+                    ->label('Spent (min)')
+                    ->default('—'),
+            ]);
+    }
+
     // ─── Table ────────────────────────────────────────────────────────────────
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\BadgeColumn::make('type')
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray'    => 'case',
-                    ]),
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
+                    ->badge()
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->limit(60),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'gray'    => 'todo',
-                        'warning' => 'in_progress',
-                        'info'    => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\BadgeColumn::make('priority')
-                    ->colors([
-                        'gray'    => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger'  => 'critical',
-                    ]),
+                    ->limit(60)
+                    ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
                 Tables\Columns\TextColumn::make('assignee.name')
                     ->label('Assignee')
@@ -197,58 +275,45 @@ class ItemResource extends Resource
                     ->sortable()
                     ->color(fn ($record) => $record->due_date?->isPast() ? 'danger' : null),
 
+                Tables\Columns\TextColumn::make('start_date')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('end_date')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('etd_date')
+                    ->label('ETD')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('eta_date')
+                    ->label('ETA')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('parent.title')
                     ->label('Parent')
                     ->limit(30),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->options([
-                        'task'    => 'Task',
-                        'epic'    => 'Epic',
-                        'project' => 'Project',
-                        'case'    => 'Case',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'todo'        => 'To Do',
-                        'in_progress' => 'In Progress',
-                        'review'      => 'Review',
-                        'done'        => 'Done',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('priority')
-                    ->options([
-                        'low'      => 'Low',
-                        'medium'   => 'Medium',
-                        'high'     => 'High',
-                        'critical' => 'Critical',
-                    ]),
+                Tables\Filters\SelectFilter::make('labels')
+                    ->relationship('labels', 'name')
+                    ->label('Label'),
 
                 Tables\Filters\SelectFilter::make('assignee')
                     ->relationship('assignee', 'name'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('convert')
-                    ->label('Convert type')
-                    ->icon('heroicon-o-arrow-path')
-                    ->form([
-                        Forms\Components\Select::make('new_type')
-                            ->label('Convert to')
-                            ->options(fn ($record) => match ($record->type) {
-                                'task'    => ['epic' => 'Epic', 'project' => 'Project'],
-                                'epic'    => ['task' => 'Task', 'project' => 'Project'],
-                                'project' => ['epic' => 'Epic'],
-                                default   => [],
-                            })
-                            ->required(),
-                    ])
-                    ->action(fn ($record, array $data) => $record->convertTo($data['new_type'])),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('assign')
+                BulkAction::make('assign')
                     ->label('Assign to…')
                     ->form([
                         Forms\Components\Select::make('assignee_id')
@@ -256,11 +321,10 @@ class ItemResource extends Resource
                             ->options(User::pluck('name', 'id'))
                             ->required(),
                     ])
-                    ->action(fn ($records, array $data) =>
-                        $records->each->update(['assignee_id' => $data['assignee_id']])
+                    ->action(fn ($records, array $data) => $records->each->update(['assignee_id' => $data['assignee_id']])
                     ),
 
-                Tables\Actions\DeleteBulkAction::make(),
+                DeleteBulkAction::make(),
             ])
             ->reorderable('position')
             ->defaultSort('position');
@@ -271,9 +335,10 @@ class ItemResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListItems::route('/'),
+            'index' => Pages\ListItems::route('/'),
             'create' => Pages\CreateItem::route('/create'),
-            'edit'   => Pages\EditItem::route('/{record}/edit'),
+            'view' => Pages\ViewItem::route('/{record}'),
+            'edit' => Pages\EditItem::route('/{record}/edit'),
         ];
     }
 

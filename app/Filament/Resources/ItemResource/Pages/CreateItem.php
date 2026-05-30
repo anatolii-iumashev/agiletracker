@@ -12,6 +12,7 @@ class CreateItem extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['reporter_id'] = auth()->id();
+
         return $data;
     }
 }

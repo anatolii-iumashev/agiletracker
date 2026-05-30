@@ -2,50 +2,37 @@
 
 namespace App\Filament\Resources\ItemResource\RelationManagers;
 
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class ChildrenRelationManager extends RelationManager
 {
     protected static string $relationship = 'children';
+
     protected static ?string $title = 'Sub-items';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([
-            Forms\Components\Select::make('type')
-                ->options([
-                    'task' => 'Task',
-                    'epic' => 'Epic',
-                    'case' => 'Case',
-                ])
-                ->required()
-                ->default('task'),
-
+        return $schema->schema([
             Forms\Components\TextInput::make('title')
                 ->required()
                 ->maxLength(255),
 
-            Forms\Components\Select::make('status')
-                ->options([
-                    'todo'        => 'To Do',
-                    'in_progress' => 'In Progress',
-                    'review'      => 'Review',
-                    'done'        => 'Done',
-                ])
-                ->default('todo'),
-
-            Forms\Components\Select::make('priority')
-                ->options([
-                    'low'      => 'Low',
-                    'medium'   => 'Medium',
-                    'high'     => 'High',
-                    'critical' => 'Critical',
-                ])
-                ->default('medium'),
+            Forms\Components\Select::make('labels')
+                ->label('Labels')
+                ->relationship('labels', 'name')
+                ->multiple()
+                ->preload()
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->required(),
+                    Forms\Components\ColorPicker::make('color')->default('#6b7280'),
+                ]),
         ]);
     }
 
@@ -53,36 +40,17 @@ class ChildrenRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\BadgeColumn::make('type')
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray'    => 'case',
-                    ]),
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
+                    ->badge()
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('title')->searchable()->limit(50),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'gray'    => 'todo',
-                        'warning' => 'in_progress',
-                        'info'    => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\BadgeColumn::make('priority')
-                    ->colors([
-                        'gray'    => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger'  => 'critical',
-                    ]),
             ])
-            ->headerActions([Tables\Actions\CreateAction::make()])
+            ->headerActions([CreateAction::make()])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 }

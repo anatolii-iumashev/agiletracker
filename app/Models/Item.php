@@ -1,38 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Concerns\Favoritable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Item extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use Favoritable, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
-        'type',
         'title',
         'description',
-        'status',
-        'priority',
         'parent_id',
         'assignee_id',
         'reporter_id',
         'due_date',
+        'start_date',
+        'end_date',
+        'etd_date',
+        'eta_date',
         'estimated_minutes',
         'spent_minutes',
         'position',
+        'to',
+        'cc',
     ];
 
     protected $casts = [
-        'due_date'           => 'date',
-        'estimated_minutes'  => 'integer',
-        'spent_minutes'      => 'integer',
+        'due_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'etd_date' => 'date',
+        'eta_date' => 'date',
+        'estimated_minutes' => 'integer',
+        'spent_minutes' => 'integer',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -67,27 +78,22 @@ class Item extends Model
         return $this->belongsToMany(Label::class, 'item_label');
     }
 
+    public function to(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'item_to');
+    }
+
+    public function cc(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'item_cc');
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)->latest();
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
-
-    public function scopeProjects($query)
-    {
-        return $query->where('type', 'project');
-    }
-
-    public function scopeEpics($query)
-    {
-        return $query->where('type', 'epic');
-    }
-
-    public function scopeTasks($query)
-    {
-        return $query->where('type', 'task');
-    }
 
     public function scopeRootLevel($query)
     {
@@ -99,35 +105,12 @@ class Item extends Model
         return $query->where('assignee_id', $userId);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    /**
-     * Convert this item to another type.
-     * Allowed conversions:
-     *   task    → epic, project
-     *   epic    → task, project
-     *   project → epic
-     *   case    → task, epic
-     */
-    public function convertTo(string $newType): static
+    public function scopeWithLabel($query, string $labelName)
     {
-        $allowed = [
-            'task'    => ['epic', 'project'],
-            'epic'    => ['project', 'task'],
-            'project' => ['epic'],
-            'case'    => ['task', 'epic'],
-        ];
-
-        if (! in_array($newType, $allowed[$this->type] ?? [])) {
-            throw new \InvalidArgumentException(
-                "Cannot convert {$this->type} to {$newType}"
-            );
-        }
-
-        $this->update(['type' => $newType]);
-
-        return $this;
+        return $query->whereHas('labels', fn ($q) => $q->where('name', $labelName));
     }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public function getEstimatedHoursAttribute(): ?float
     {
@@ -144,7 +127,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'status', 'priority', 'assignee_id', 'type', 'parent_id'])
+            ->logOnly(['title', 'assignee_id', 'parent_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Concerns\Favoritable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use Notifiable, HasRoles;
+    use Favoritable, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = ['name', 'email', 'password'];
 
@@ -19,7 +24,7 @@ class User extends Authenticatable implements FilamentUser
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
+        'password' => 'hashed',
     ];
 
     public function canAccessPanel(Panel $panel): bool
@@ -37,8 +42,23 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Item::class, 'reporter_id');
     }
 
+    public function toItems(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'item_to');
+    }
+
+    public function ccItems(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'item_cc');
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
     }
 }

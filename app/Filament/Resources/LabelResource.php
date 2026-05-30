@@ -2,29 +2,39 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\LabelResource\Pages\CreateLabel;
+use App\Filament\Resources\LabelResource\Pages\EditLabel;
+use App\Filament\Resources\LabelResource\Pages\ListLabels;
 use App\Models\Label;
+use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class LabelResource extends Resource
 {
     protected static ?string $model = Label::class;
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
-    protected static ?string $navigationGroup = 'Settings';
-    protected static ?int $navigationSort = 10;
 
-    public static function form(Form $form): Form
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-tag';
+
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
+
+    protected static ?int $navigationSort = 3;
+
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\TextInput::make('name')
                 ->required()
                 ->maxLength(50),
 
             Forms\Components\ColorPicker::make('color')
-                ->default('#6366f1'),
+                ->default('#6b7280'),
         ]);
     }
 
@@ -39,17 +49,17 @@ class LabelResource extends Resource
                     ->label('Items'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index'  => \App\Filament\Resources\LabelResource\Pages\ListLabels::route('/'),
-            'create' => \App\Filament\Resources\LabelResource\Pages\CreateLabel::route('/create'),
-            'edit'   => \App\Filament\Resources\LabelResource\Pages\EditLabel::route('/{record}/edit'),
+            'index' => ListLabels::route('/'),
+            'create' => CreateLabel::route('/create'),
+            'edit' => EditLabel::route('/{record}/edit'),
         ];
     }
 }

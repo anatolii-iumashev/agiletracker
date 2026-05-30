@@ -1,0 +1,9 @@
+{
+  "toolConfig": {
+    "disabledServers": ["sqlite"],
+    "enabledBuiltinTools": ["read_file", "file_search", "replace_string_in_file"]
+  },
+  "connection": {
+    "type": "internal"
+  }
+}

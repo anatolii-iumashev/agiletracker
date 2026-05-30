@@ -11,26 +11,19 @@ class StatsOverviewWidget extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Open Tasks', Item::tasks()->whereNotIn('status', ['done'])->count())
-                ->description('Not yet done')
-                ->color('warning')
+            Stat::make('Total Items', Item::count())
+                ->color('primary')
                 ->icon('heroicon-o-clipboard-document-list'),
 
-            Stat::make('In Progress', Item::tasks()->where('status', 'in_progress')->count())
-                ->color('primary')
+            Stat::make('Assigned to me', Item::where('assignee_id', auth()->id())->count())
+                ->color('warning')
                 ->icon('heroicon-o-arrow-path'),
 
-            Stat::make('Completed Today', Item::tasks()
-                ->where('status', 'done')
-                ->whereDate('updated_at', today())
-                ->count())
+            Stat::make('Updated Today', Item::whereDate('updated_at', today())->count())
                 ->color('success')
                 ->icon('heroicon-o-check-circle'),
 
-            Stat::make('Overdue', Item::tasks()
-                ->whereNotIn('status', ['done'])
-                ->whereDate('due_date', '<', today())
-                ->count())
+            Stat::make('Overdue', Item::whereDate('due_date', '<', today())->count())
                 ->color('danger')
                 ->icon('heroicon-o-exclamation-triangle'),
         ];

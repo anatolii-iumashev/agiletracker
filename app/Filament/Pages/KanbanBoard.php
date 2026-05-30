@@ -3,38 +3,45 @@
 namespace App\Filament\Pages;
 
 use App\Models\Item;
+use App\Models\Label;
+use BackedEnum;
 use Filament\Pages\Page;
 use Livewire\Attributes\On;
+use UnitEnum;
 
 class KanbanBoard extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-view-columns';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-view-columns';
+
     protected static ?string $navigationLabel = 'Kanban';
-    protected static ?string $navigationGroup = 'Work';
-    protected static string $view = 'filament.pages.kanban-board';
+
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
+
+    protected static ?int $navigationSort = 2;
+
+    protected string $view = 'filament.pages.kanban-board';
 
     public ?int $projectId = null;
 
     public array $columns = [
-        'todo'        => 'To Do',
+        'todo' => 'To Do',
         'in_progress' => 'In Progress',
-        'review'      => 'Review',
-        'done'        => 'Done',
+        'review' => 'Review',
+        'done' => 'Done',
     ];
 
     public function getItemsByStatus(): array
     {
         $query = Item::with(['assignee', 'labels'])
-            ->whereIn('type', ['task', 'case']);
+            ->orderBy('position');
 
         if ($this->projectId) {
             $query->where('parent_id', $this->projectId);
         }
 
         return $query
-            ->orderBy('position')
             ->get()
-            ->groupBy('status')
+            ->groupBy(fn (Item $item) => $item->labels->pluck('name')->sort()->join(', ') ?: 'no-label')
             ->map(fn ($group) => $group->toArray())
             ->toArray();
     }
@@ -43,9 +50,14 @@ class KanbanBoard extends Page
     #[On('item-moved')]
     public function moveItem(int $itemId, string $newStatus, int $position): void
     {
-        Item::where('id', $itemId)->update([
-            'status'   => $newStatus,
-            'position' => $position,
-        ]);
+        $item = Item::find($itemId);
+        $item?->update(['position' => $position]);
+
+        // Attach label matching the target column name
+        $label = Label::firstOrCreate(
+            ['name' => $newStatus],
+            ['color' => '#6b7280']
+        );
+        $item?->labels()->syncWithoutDetaching([$label->id]);
     }
 }
