@@ -4,6 +4,10 @@ Use date format for releases: `YYYY.MM.I` (e.g. `2026.05.1-alpha`).
 Use flat lists for changes
 If changes many - use categories (Added, Changed, Fixed, etc.)
 
+## [2026.06.2-alpha] — 2026-06-01
+
+TBD
+
 ## [2026.05.1-alpha] — 2026-05-30
 
 First alpha release. Core project scaffolding, Filament admin panel with item management, Kanban board, and settings system.
