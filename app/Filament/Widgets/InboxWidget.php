@@ -26,37 +26,15 @@ class InboxWidget extends BaseWidget
                 ->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('type')
-                    ->badge()
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray' => 'case',
-                    ]),
-
                 Tables\Columns\TextColumn::make('title')
                     ->sortable()
                     ->limit(60)
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
                     ->badge()
-                    ->colors([
-                        'gray' => 'todo',
-                        'warning' => 'in_progress',
-                        'info' => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\TextColumn::make('priority')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger' => 'critical',
-                    ]),
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()

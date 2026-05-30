@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Item;
+use App\Models\Label;
 use BackedEnum;
 use Filament\Pages\Page;
 use Livewire\Attributes\On;
@@ -32,16 +33,15 @@ class KanbanBoard extends Page
     public function getItemsByStatus(): array
     {
         $query = Item::with(['assignee', 'labels'])
-            ->whereIn('type', ['task', 'case']);
+            ->orderBy('position');
 
         if ($this->projectId) {
             $query->where('parent_id', $this->projectId);
         }
 
         return $query
-            ->orderBy('position')
             ->get()
-            ->groupBy('status')
+            ->groupBy(fn (Item $item) => $item->labels->pluck('name')->sort()->join(', ') ?: 'no-label')
             ->map(fn ($group) => $group->toArray())
             ->toArray();
     }
@@ -50,9 +50,14 @@ class KanbanBoard extends Page
     #[On('item-moved')]
     public function moveItem(int $itemId, string $newStatus, int $position): void
     {
-        Item::where('id', $itemId)->update([
-            'status' => $newStatus,
-            'position' => $position,
-        ]);
+        $item = Item::find($itemId);
+        $item?->update(['position' => $position]);
+
+        // Attach label matching the target column name
+        $label = Label::firstOrCreate(
+            ['name' => $newStatus],
+            ['color' => '#6b7280']
+        );
+        $item?->labels()->syncWithoutDetaching([$label->id]);
     }
 }

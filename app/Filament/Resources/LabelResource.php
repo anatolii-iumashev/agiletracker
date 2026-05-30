@@ -22,9 +22,9 @@ class LabelResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-tag';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Settings';
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
@@ -34,7 +34,7 @@ class LabelResource extends Resource
                 ->maxLength(50),
 
             Forms\Components\ColorPicker::make('color')
-                ->default('#6366f1'),
+                ->default('#6b7280'),
         ]);
     }
 

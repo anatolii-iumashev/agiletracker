@@ -14,7 +14,6 @@ use Filament\Forms;
 use Filament\Infolists;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -37,7 +36,7 @@ class ItemResource extends Resource
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return "[{$record->type}] {$record->title}";
+        return $record->title;
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -53,21 +52,10 @@ class ItemResource extends Resource
             Section::make('Overview')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\Select::make('type')
-                        ->options([
-                            'task' => 'Task',
-                            'epic' => 'Epic',
-                            'project' => 'Project',
-                            'case' => 'Case',
-                        ])
-                        ->required()
-                        ->live()
-                        ->columnSpan(1),
-
                     Forms\Components\TextInput::make('title')
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan(1),
+                        ->columnSpanFull(),
 
                     Forms\Components\MarkdownEditor::make('description')
                         ->columnSpanFull()
@@ -78,28 +66,17 @@ class ItemResource extends Resource
                         ]),
                 ]),
 
-            Section::make('Status & Priority')
-                ->columns(2)
+            Section::make('Labels')
                 ->schema([
-                    Forms\Components\Select::make('status')
-                        ->options([
-                            'todo' => 'To Do',
-                            'in_progress' => 'In Progress',
-                            'review' => 'Review',
-                            'done' => 'Done',
-                        ])
-                        ->required()
-                        ->default('todo'),
-
-                    Forms\Components\Select::make('priority')
-                        ->options([
-                            'low' => 'Low',
-                            'medium' => 'Medium',
-                            'high' => 'High',
-                            'critical' => 'Critical',
-                        ])
-                        ->required()
-                        ->default('medium'),
+                    Forms\Components\Select::make('labels')
+                        ->label('Labels')
+                        ->relationship('labels', 'name')
+                        ->multiple()
+                        ->preload()
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('name')->required(),
+                            Forms\Components\ColorPicker::make('color')->default('#6b7280'),
+                        ]),
                 ]),
 
             Section::make('Participants')
@@ -142,26 +119,9 @@ class ItemResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('parent_id')
                         ->label('Parent')
-                        ->options(fn (Get $get) => Item::query()
-                            ->whereIn('type', match ($get('type')) {
-                                'task' => ['epic', 'project'],
-                                'epic' => ['project'],
-                                default => [],
-                            })
-                            ->pluck('title', 'id')
-                        )
+                        ->relationship('parent', 'title')
                         ->searchable()
                         ->nullable(),
-
-                    Forms\Components\Select::make('labels')
-                        ->label('Labels')
-                        ->relationship('labels', 'name')
-                        ->multiple()
-                        ->preload()
-                        ->createOptionForm([
-                            Forms\Components\TextInput::make('name')->required(),
-                            Forms\Components\ColorPicker::make('color')->default('#6366f1'),
-                        ]),
                 ]),
 
             Section::make('Dates')
@@ -207,29 +167,11 @@ class ItemResource extends Resource
                     ->default('No description.')
                     ->columnSpanFull(),
 
-                Infolists\Components\TextEntry::make('type')
+                Infolists\Components\TextEntry::make('labels.name')
+                    ->label('Labels')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'project' => 'primary', 'epic' => 'warning',
-                        'task' => 'success', 'case' => 'gray',
-                        default => 'gray',
-                    }),
-
-                Infolists\Components\TextEntry::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'todo' => 'gray', 'in_progress' => 'warning',
-                        'review' => 'info', 'done' => 'success',
-                        default => 'gray',
-                    }),
-
-                Infolists\Components\TextEntry::make('priority')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'low' => 'gray', 'medium' => 'primary',
-                        'high' => 'warning', 'critical' => 'danger',
-                        default => 'gray',
-                    }),
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
+                    ->default('—'),
 
                 Section::make('Participants')
                     ->schema([
@@ -258,11 +200,6 @@ class ItemResource extends Resource
                         ? ItemResource::getUrl('view', ['record' => $record->parent])
                         : null
                     )
-                    ->default('—'),
-
-                Infolists\Components\TextEntry::make('labels.name')
-                    ->label('Labels')
-                    ->badge()
                     ->default('—'),
 
                 Section::make('Dates')
@@ -318,38 +255,16 @@ class ItemResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type')
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
                     ->badge()
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray' => 'case',
-                    ]),
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
                     ->limit(60)
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'todo',
-                        'warning' => 'in_progress',
-                        'info' => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\TextColumn::make('priority')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger' => 'critical',
-                    ]),
 
                 Tables\Columns\TextColumn::make('assignee.name')
                     ->label('Assignee')
@@ -387,29 +302,9 @@ class ItemResource extends Resource
                     ->limit(30),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->options([
-                        'task' => 'Task',
-                        'epic' => 'Epic',
-                        'project' => 'Project',
-                        'case' => 'Case',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'todo' => 'To Do',
-                        'in_progress' => 'In Progress',
-                        'review' => 'Review',
-                        'done' => 'Done',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('priority')
-                    ->options([
-                        'low' => 'Low',
-                        'medium' => 'Medium',
-                        'high' => 'High',
-                        'critical' => 'Critical',
-                    ]),
+                Tables\Filters\SelectFilter::make('labels')
+                    ->relationship('labels', 'name')
+                    ->label('Label'),
 
                 Tables\Filters\SelectFilter::make('assignee')
                     ->relationship('assignee', 'name'),

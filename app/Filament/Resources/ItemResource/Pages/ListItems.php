@@ -23,19 +23,10 @@ class ListItems extends ListRecords
             'all' => Tab::make('All'),
 
             'mine' => Tab::make('Mine')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('assignee_id', auth()->id())
-                ),
-
-            'todo' => Tab::make('To Do')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('status', 'todo')),
-
-            'in_progress' => Tab::make('In Progress')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('status', 'in_progress')),
+                ->modifyQueryUsing(fn (Builder $q) => $q->where('assignee_id', auth()->id())),
 
             'overdue' => Tab::make('Overdue')
-                ->modifyQueryUsing(fn (Builder $q) => $q->whereNotIn('status', ['done'])
-                    ->whereDate('due_date', '<', today())
-                ),
+                ->modifyQueryUsing(fn (Builder $q) => $q->whereDate('due_date', '<', today())),
         ];
     }
 }

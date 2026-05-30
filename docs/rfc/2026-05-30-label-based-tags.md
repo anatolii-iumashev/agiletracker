@@ -1,145 +1,122 @@
-# RFC: Система тегов на основе лейблов — замена Type, Status, Priority
+# RFC: Label-Based Tagging System — Replace Type, Status, Priority
 
 ## TL;DR
 
-Убираем жёстко заданные колонки `type`, `status` и `priority` из `Item` и заменяем их гибкой системой тегов на основе лейблов. Любой лейбл можно назначить любому элементу — пользователи сами определяют категории, рабочие процессы и приоритеты через лейблы.
+Remove hardcoded `type`, `status`, and `priority` columns from `Item` and replace them with a flexible label-based tagging system. Any label can be assigned to any item — users define their own categories, workflows, and priorities as labels. No new columns needed: existing `Label` model (`name` + `color`) is sufficient.
 
-## Контекст
+## Context
 
-### Что?
+### What?
 
-- Удаляем колонки `type`, `status`, `priority` из таблицы `items`
-- Убираем все хардкодные выпадающие списки type/status/priority в формах, таблицах, фильтрах и виджетах Filament
-- Используем существующую модель `Label` + pivot `item_label` как единый механизм тегирования
-- Добавляем опциональные **группы лейблов** (например, «Тип», «Статус», «Приоритет») для визуальной группировки и взаимоисключающего выбора внутри группы
-- Свободное создание лейблов — пользователи могут задавать любые теги и метки
-- добавляем редактор лейблов в админку - раздел Collections - Labels
+- Drop columns `type`, `status`, `priority` from the `items` table
+- Remove all hardcoded enum-like dropdowns for type/status/priority in Filament forms, tables, filters, and widgets
+- Reuse the existing `Label` model + `item_label` pivot as the unified tagging mechanism — no new columns needed
+- Labels are flat: just `name` + `color`. Default color is gray (`#6b7280`)
+- Labels resource is already in the admin panel under Settings
 
-### Зачем?
+### Why?
 
-- **Жёсткая структура**: текущие `type` (task/epic/project/case), `status` (todo/in_progress/review/done) и `priority` (low/medium/high/critical) захардкожены. У каждой команды свой рабочий процесс — кому-то нужны «заблокировано», «готово к тестированию», «дизайн-ревью» и т.д.
-- **Type ≠ label**: сейчас элемент обязан иметь type И может иметь labels — это создаёт две конкурирующие системы категоризации. Объединяем в одну.
-- **Простота**: меньше колонок, проще модель, проще форма. Система лейблов уже существует — мы просто расширяем её роль.
-- **Гибкость**: лейблы могут означать что угодно — тип, статус, приоритет, спринт, компонент, заказчика и т.д. Всё в одном унифицированном механизме.
+- **Rigid structure**: type (task/epic/project/case), status (todo/in_progress/review/done), priority (low/medium/high/critical) are hardcoded. Every team has its own workflow.
+- **Type ≠ label**: an item must have a type AND can have labels — two competing categorization systems. Unify into one.
+- **Simplicity**: fewer columns, simpler model, simpler form. The label system already exists.
+- **Flexibility**: labels can represent anything — type, status, priority, sprint, component, etc.
 
-### Как?
+### How?
 
-1. **Новая миграция** для удаления колонок `type`, `status`, `priority` из `items`
-2. **Расширяем модель `Label`** опциональной колонкой `type` (nullable string: «Тип», «Статус», «Приоритет» или null для свободных тегов)
-3. **Обновляем модель `Item`**: убираем type/status/priority из `$fillable`, `$casts`, scopes (`scopeProjects`, `scopeEpics`, `scopeTasks`), `convertTo()` и конфига activity log
-4. **Перерабатываем `ItemResource`**: заменяем select'ы type/status/priority на мульти-селект лейблов с опциональной группировкой
-5. **Обновляем виджеты**: фильтрация по лейблам вместо хардкодных значений статуса
-6. **Обновляем тесты, фабрику, сидер**
+1. **New migration** to drop `type`, `status`, `priority` columns from `items`
+2. **No changes to `Label` model** — existing `name` + `color` is sufficient
+3. **Update `Item` model**: remove type/status/priority from `$fillable`, `$casts`, scopes, `convertTo()`, activity log
+4. **Rewire `ItemResource`**: replace type/status/priority selects with a single labels multi-select
+5. **Update widgets**: filter by labels instead of hardcoded status values
+6. **Update tests, factory, seeder**
 
-## Компоненты и детали
+## Components & Specifics
 
-### Затрагиваемые компоненты
+### Components affected
 
-| Компонент | Изменение |
-|-----------|-----------|
-| `database/migrations/` | **Новая миграция** для удаления `type`, `status`, `priority` из `items` |
-| `app/Models/Item.php` | Убрать type/status/priority из fillable, casts, scopes, `convertTo()`, activity log |
-| `app/Models/Label.php` | Добавить опциональную колонку `type` |
-| `app/Filament/Resources/ItemResource.php` | Заменить select'ы type/status/priority на мульти-селект лейблов (с группировкой); обновить колонки таблицы, фильтры, infolist, глобальный поиск |
-| `app/Filament/Resources/ItemResource/Pages/ListItems.php` | Заменить вкладки на основе статуса на вкладки на основе лейблов |
-| `app/Filament/Resources/ItemResource/RelationManagers/ChildrenRelationManager.php` | Убрать type/status/priority из формы и таблицы |
-| `app/Filament/Widgets/StatsOverviewWidget.php` | Переписать статистику с использованием лейблов вместо хардкодных статусов |
-| `app/Filament/Widgets/MyTasksWidget.php` | Заменить колонки с бейджами; фильтровать по лейблам |
-| `app/Filament/Widgets/InboxWidget.php` | Аналогично |
-| `app/Filament/Resources/LabelResource.php` | Добавить поле `type` |
-| `database/factories/ItemFactory.php` | Убрать значения type/status/priority по умолчанию |
-| `database/seeders/DatabaseSeeder.php` | Убрать хардкодные type/status/priority; создать дефолтные лейблы |
-| `tests/Feature/ModelSmokeTest.php` | Обновить проверки |
+| Component | Change |
+|-----------|--------|
+| `database/migrations/` | **New migration** — drop `type`, `status`, `priority` from `items` |
+| `app/Models/Item.php` | Remove type/status/priority from fillable, casts, scopes, `convertTo()`, activity log |
+| `app/Models/Label.php` | No changes |
+| `app/Filament/Resources/ItemResource.php` | Replace type/status/priority selects with label multi-select; update table columns, filters, infolist, global search |
+| `app/Filament/Resources/ItemResource/Pages/ListItems.php` | Simplify tabs to All / Mine / Overdue |
+| `app/Filament/Resources/ItemResource/RelationManagers/ChildrenRelationManager.php` | Remove type/status/priority from form & table |
+| `app/Filament/Widgets/StatsOverviewWidget.php` | Rewrite stats — generic counts, no hardcoded status |
+| `app/Filament/Widgets/MyTasksWidget.php` | Replace badge columns with labels; remove `whereNotIn('status', ['done'])` |
+| `app/Filament/Widgets/InboxWidget.php` | Labels column after title |
+| `app/Filament/Resources/LabelResource.php` | Default color → `#6b7280` |
+| `database/factories/ItemFactory.php` | Remove type/status/priority defaults; remove `task()`, `project()`, `epic()`, `case()` states |
+| `database/seeders/DatabaseSeeder.php` | Remove hardcoded type/status/priority; seed 12 default labels; attach labels to seeded items |
+| `tests/Feature/ModelSmokeTest.php` | Update assertions |
 
-### Ключевые архитектурные решения
+### Key architectural decisions
 
-1. **Группы лейблов опциональны** — лейбл без группы является свободным тегом. Группы только обеспечивают визуальную организацию и опционально могут enforcing взаимоисключение (например, только один лейбл «Статус»).
-2. **Никаких хардкодных названий лейблов** — система поставляется с сидером, который создаёт разумные значения по умолчанию (`В работе`, `Готово`, `Задача`, `Баг`, `Высокий`, `Критичный` и т.д.), но все они могут быть изменены или удалены пользователями.
-3. **Scopes сохранены как соглашение** — `scopeTasks()`, `scopeEpics()` и т.д. становятся запросами на основе лейблов (например, `whereHas('labels', fn($q) => $q->where('name', 'Задача'))`). Если лейбл не существует, scope возвращает пустой результат.
-4. **Заголовок глобального поиска** меняется с `[$record->type] $record->title` на просто `$record->title` (или показывает первый лейбл).
-5. **Activity log** продолжает отслеживать изменения лейблов через существующий `BelongsToMany` (Spatie отслеживает синхронизацию pivot автоматически, если настроено).
+1. **Flat labels, no groups** — labels have just `name` and `color`. Simple and flexible. No extra columns.
+2. **No hardcoded label names** — the system ships with a seeder that creates sensible defaults, but all are editable/deletable by users.
+3. **`scopeWithLabel()`** — a single generic scope: `Item::withLabel('Task')` queries by label `name`.
+4. **Global search** title changes from `[$record->type] $record->title` to just `$record->title`.
+5. **Activity log** tracks label changes via the existing `BelongsToMany` relationship.
 
-### Ограничения и граничные случаи
+### Constraints & edge cases
 
-- **Существующие данные**: миграция удалит колонки — существующие данные type/status/priority будут **потеряны**. Следует рассмотреть предварительный сидер/команду для конвертации существующих значений в лейблы.
-- **Взаимоисключение для групп**: реализация «только один лейбл статуса» требует кастомной валидации в форме Filament. Это nice-to-have, не входит в v1.
-- **Цветовое кодирование**: цвета лейблов теперь определяют цвета бейджей в таблицах/виджетах — поле `color` в `Label` уже это поддерживает.
+- **Existing data**: migration drops columns — existing type/status/priority data is **lost**. The seeder provides default labels for fresh installs.
+- **Color coding**: badge colors in tables/widgets come from the label's `color` field. Default is gray `#6b7280`.
 
-### За рамками (явно)
+### Out of scope
 
-- Принудительное взаимоисключение для групп лейблов (v2)
-- Автоматические переходы рабочего процесса (v2)
-- Права доступа на основе лейблов (v2)
-- Помощник миграции для сохранения существующих type/status/priority как лейблов (может быть ручным шагом или отдельным скриптом)
+- Label groups / mutual exclusivity (unnecessary complexity)
+- Automatic workflow transitions
+- Label-based permissions
+- Migration helper to preserve existing type/status/priority
 
-### Зависимости
+### Dependencies
 
-- Отсутствуют — модель `Label` и pivot `item_label` уже существуют и работают.
+- None — `Label` model and `item_label` pivot already exist.
 
-## Критерии приёмки
+## Acceptance Criteria
 
-- [ ] Миграция удаляет колонки `type`, `status`, `priority` из таблицы `items`
-- [ ] Модель `Label` имеет nullable колонку `group` (миграция + fillable модели)
-- [ ] Форма `LabelResource` включает поле `group`
-- [ ] Модель `Item` больше не ссылается на `type`, `status`, `priority` в fillable/casts/scopes/convertTo/activity log
-- [ ] Форма `ItemResource` имеет мульти-селект лейблов вместо select'ов type/status/priority
-- [ ] Таблица `ItemResource` показывает лейблы как бейджи (с цветом лейбла) вместо колонок type/status/priority
-- [ ] Фильтры `ItemResource` используют фильтрацию на основе лейблов вместо SelectFilter'ов type/status/priority
-- [ ] Infolist `ItemResource` показывает лейблы вместо бейджей type/status/priority
-- [ ] Вкладки `ListItems` управляются лейблами (или упрощены до «Все»/«Мои»)
-- [ ] Форма и таблица `ChildrenRelationManager` обновлены — без type/status/priority
-- [ ] `StatsOverviewWidget` использует запросы на основе лейблов
-- [ ] `MyTasksWidget` использует запросы на основе лейблов и рендеринг бейджей
-- [ ] `ItemFactory` больше не определяет значения type/status/priority по умолчанию
-- [ ] `DatabaseSeeder` создаёт дефолтные лейблы (В работе, Готово, Задача, Баг, Фича, Низкий, Средний, Высокий, Критичный)
-- [ ] Все существующие тесты проходят после изменений
-- [ ] `./vendor/bin/pint` проходит
-- [ ] Сборка фронтенда успешна (`npm run build`)
+- [ ] Migration drops `type`, `status`, `priority` columns from `items` table
+- [ ] `Item` model no longer references `type`, `status`, `priority` in fillable/casts/scopes/convertTo/activity log
+- [ ] `ItemResource` form has label multi-select instead of type/status/priority selects
+- [ ] `ItemResource` table shows labels as badges (with label color) instead of type/status/priority columns
+- [ ] `ItemResource` filters use label-based filtering instead of type/status/priority SelectFilters
+- [ ] `ItemResource` infolist shows labels instead of type/status/priority badges
+- [ ] `ListItems` tabs are All / Mine / Overdue (no status-based tabs)
+- [ ] `ChildrenRelationManager` form and table updated — no type/status/priority
+- [ ] `StatsOverviewWidget` uses generic queries (no hardcoded status)
+- [ ] `MyTasksWidget` uses labels, no `whereNotIn('status', ['done'])` filter
+- [ ] `InboxWidget` has labels column after title
+- [ ] `LabelResource` default color is `#6b7280`
+- [ ] `ItemFactory` no longer defines type/status/priority; `task()`/`project()`/`epic()`/`case()` states removed
+- [ ] `DatabaseSeeder` seeds default labels (Task, Bug, Feature, Epic, To Do, In Progress, Review, Done, Low, Medium, High, Critical)
+- [ ] All existing tests pass
+- [ ] `./vendor/bin/pint` passes
+- [ ] `npm run build` succeeds
 
-## Дополнения
+## Addenda
 
-### Предлагаемая миграция
+### Proposed migration
 
 ```php
-// Удаление type/status/priority из items
 Schema::table('items', function (Blueprint $table) {
     $table->dropColumn(['type', 'status', 'priority']);
 });
-
-// Добавление group в labels
-Schema::table('labels', function (Blueprint $table) {
-    $table->string('group')->nullable()->after('color');
-});
 ```
 
-### Дефолтные лейблы (сидер)
+### Default labels (seeder)
 
-| Название | Группа | Цвет |
-|----------|--------|------|
-| Задача | Тип | #3b82f6 |
-| Баг | Тип | #ef4444 |
-| Фича | Тип | #8b5cf6 |
-| Эпик | Тип | #f59e0b |
-| К выполнению | Статус | #6b7280 |
-| В работе | Статус | #f59e0b |
-| Ревью | Статус | #3b82f6 |
-| Готово | Статус | #10b981 |
-| Низкий | Приоритет | #6b7280 |
-| Средний | Приоритет | #3b82f6 |
-| Высокий | Приоритет | #f59e0b |
-| Критичный | Приоритет | #ef4444 |
-
-### Форма лейблов (Filament) — предлагаемое отображение групп
-
-Мульти-селект лейблов в форме Item должен опционально группировать лейблы по полю `group`:
-
-```
-Тип
-  ☐ Задача    ☐ Баг    ☐ Фича    ☐ Эпик
-Статус
-  ○ К выполнению    ○ В работе    ○ Ревью    ○ Готово
-Приоритет
-  ○ Низкий    ○ Средний    ○ Высокий    ○ Критичный
-Без группы
-  ☐ Фронтенд    ☐ Бэкенд    ☐ DevOps
-```
+| Name | Color |
+|------|-------|
+| Task | #3b82f6 |
+| Bug | #ef4444 |
+| Feature | #8b5cf6 |
+| Epic | #f59e0b |
+| To Do | #6b7280 |
+| In Progress | #f59e0b |
+| Review | #3b82f6 |
+| Done | #10b981 |
+| Low | #6b7280 |
+| Medium | #3b82f6 |
+| High | #f59e0b |
+| Critical | #ef4444 |

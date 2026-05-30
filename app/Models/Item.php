@@ -19,11 +19,8 @@ class Item extends Model
     use Favoritable, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
-        'type',
         'title',
         'description',
-        'status',
-        'priority',
         'parent_id',
         'assignee_id',
         'reporter_id',
@@ -98,21 +95,6 @@ class Item extends Model
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeProjects($query)
-    {
-        return $query->where('type', 'project');
-    }
-
-    public function scopeEpics($query)
-    {
-        return $query->where('type', 'epic');
-    }
-
-    public function scopeTasks($query)
-    {
-        return $query->where('type', 'task');
-    }
-
     public function scopeRootLevel($query)
     {
         return $query->whereNull('parent_id');
@@ -123,35 +105,12 @@ class Item extends Model
         return $query->where('assignee_id', $userId);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    /**
-     * Convert this item to another type.
-     * Allowed conversions:
-     *   task    → epic, project
-     *   epic    → task, project
-     *   project → epic
-     *   case    → task, epic
-     */
-    public function convertTo(string $newType): static
+    public function scopeWithLabel($query, string $labelName)
     {
-        $allowed = [
-            'task' => ['epic', 'project'],
-            'epic' => ['project', 'task'],
-            'project' => ['epic'],
-            'case' => ['task', 'epic'],
-        ];
-
-        if (! in_array($newType, $allowed[$this->type] ?? [])) {
-            throw new \InvalidArgumentException(
-                "Cannot convert {$this->type} to {$newType}"
-            );
-        }
-
-        $this->update(['type' => $newType]);
-
-        return $this;
+        return $query->whereHas('labels', fn ($q) => $q->where('name', $labelName));
     }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public function getEstimatedHoursAttribute(): ?float
     {
@@ -168,7 +127,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'status', 'priority', 'assignee_id', 'type', 'parent_id'])
+            ->logOnly(['title', 'assignee_id', 'parent_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

@@ -41,11 +41,10 @@ test('item can be created via factory', function () {
         ->and($item->exists)->toBeTrue();
 });
 
-test('item has title and type', function () {
-    $item = Item::factory()->create(['title' => 'Test Task', 'type' => 'task']);
+test('item has title', function () {
+    $item = Item::factory()->create(['title' => 'Test Task']);
 
-    expect($item->title)->toBe('Test Task')
-        ->and($item->type)->toBe('task');
+    expect($item->title)->toBe('Test Task');
 });
 
 test('item can have parent-child relationship', function () {
@@ -65,11 +64,13 @@ test('item can be assigned to user', function () {
         ->and($item->assignee->id)->toBe($user->id);
 });
 
-test('item has valid status and priority values', function () {
+test('item can be labeled', function () {
     $item = Item::factory()->create();
+    $label = Label::create(['name' => 'Urgent', 'color' => '#ff0000']);
+    $item->labels()->attach($label);
 
-    expect($item->status)->toBeIn(['todo', 'in_progress', 'review', 'done'])
-        ->and($item->priority)->toBeIn(['low', 'medium', 'high', 'critical']);
+    expect($item->labels)->toHaveCount(1)
+        ->and($item->labels->first()->name)->toBe('Urgent');
 });
 
 test('item soft deletes', function () {
@@ -107,13 +108,4 @@ test('label can be created', function () {
     expect($label)->toBeInstanceOf(Label::class)
         ->and($label->exists)->toBeTrue()
         ->and($label->name)->toBe('Bug');
-});
-
-test('label can be attached to item', function () {
-    $item = Item::factory()->create();
-    $label = Label::create(['name' => 'Urgent', 'color' => '#ff0000']);
-    $item->labels()->attach($label);
-
-    expect($item->labels)->toHaveCount(1)
-        ->and($item->labels->first()->name)->toBe('Urgent');
 });

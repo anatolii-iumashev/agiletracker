@@ -20,36 +20,19 @@ class ChildrenRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Select::make('type')
-                ->options([
-                    'task' => 'Task',
-                    'epic' => 'Epic',
-                    'case' => 'Case',
-                ])
-                ->required()
-                ->default('task'),
-
             Forms\Components\TextInput::make('title')
                 ->required()
                 ->maxLength(255),
 
-            Forms\Components\Select::make('status')
-                ->options([
-                    'todo' => 'To Do',
-                    'in_progress' => 'In Progress',
-                    'review' => 'Review',
-                    'done' => 'Done',
-                ])
-                ->default('todo'),
-
-            Forms\Components\Select::make('priority')
-                ->options([
-                    'low' => 'Low',
-                    'medium' => 'Medium',
-                    'high' => 'High',
-                    'critical' => 'Critical',
-                ])
-                ->default('medium'),
+            Forms\Components\Select::make('labels')
+                ->label('Labels')
+                ->relationship('labels', 'name')
+                ->multiple()
+                ->preload()
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->required(),
+                    Forms\Components\ColorPicker::make('color')->default('#6b7280'),
+                ]),
         ]);
     }
 
@@ -57,34 +40,12 @@ class ChildrenRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type')
+                Tables\Columns\TextColumn::make('labels.name')
+                    ->label('Labels')
                     ->badge()
-                    ->colors([
-                        'primary' => 'project',
-                        'warning' => 'epic',
-                        'success' => 'task',
-                        'gray' => 'case',
-                    ]),
+                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('title')->searchable()->limit(50),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'todo',
-                        'warning' => 'in_progress',
-                        'info' => 'review',
-                        'success' => 'done',
-                    ]),
-
-                Tables\Columns\TextColumn::make('priority')
-                    ->badge()
-                    ->colors([
-                        'gray' => 'low',
-                        'primary' => 'medium',
-                        'warning' => 'high',
-                        'danger' => 'critical',
-                    ]),
             ])
             ->headerActions([CreateAction::make()])
             ->actions([
