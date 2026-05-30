@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "laravel-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-patterns/SKILL.md",
+      "computedHash": "c56253bf241431910bd23fa1e04f72eae90af8ae744843b57c21f5f8fd9152c2"
+    },
     "laravel-specialist": {
       "source": "jeffallan/claude-skills",
       "sourceType": "github",
