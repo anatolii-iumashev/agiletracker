@@ -1,13 +1,17 @@
 # ROADMAP — AgileTracker
 
 - [ ] alfa 2
-    - Parent & Labels - as section General
-    - Meta - JSON field
     - docs/rfc/2026-05-30-plugin-system.md
     - docs/rfc/2026-05-30-settings-system.md
+    - **done**
+    - [x] Items - add Meta field - JSON field
+    - Parent & Labels - as section General
 
 - [ ] alfa 3
     - TBD
+
+- [ ] beta 1
+    - схлопнуть миграции (по одной на модель)
 
 ## Upcoming
 

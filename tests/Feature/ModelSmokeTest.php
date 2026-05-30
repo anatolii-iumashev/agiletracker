@@ -47,6 +47,20 @@ test('item has title', function () {
     expect($item->title)->toBe('Test Task');
 });
 
+test('item meta is cast to array', function () {
+    $item = Item::factory()->create([
+        'meta' => [
+            'source' => 'roadmap',
+            'severity' => 'high',
+        ],
+    ]);
+
+    expect($item->fresh()->meta)->toBe([
+        'source' => 'roadmap',
+        'severity' => 'high',
+    ]);
+});
+
 test('item can have parent-child relationship', function () {
     $parent = Item::factory()->create();
     $child = Item::factory()->create(['parent_id' => $parent->id]);

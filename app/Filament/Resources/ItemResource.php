@@ -135,6 +135,13 @@ class ItemResource extends Resource
                         ->nullable(),
                 ]),
 
+            Section::make('Meta')
+                ->columnSpanFull()
+                ->schema([
+                    Forms\Components\KeyValue::make('meta')
+                        ->label('Meta'),
+                ]),
+
         ]);
     }
 
@@ -153,6 +160,11 @@ class ItemResource extends Resource
                             ->markdown()
                             ->default('No description.')
                             ->columnSpanFull(),
+
+                        Infolists\Components\KeyValueEntry::make('meta')
+                            ->label('Meta')
+                            ->columnSpanFull()
+                            ->visible(fn (?Item $record): bool => filled($record?->meta)),
 
                         Infolists\Components\TextEntry::make('parent.title')
                             ->label('Parent')

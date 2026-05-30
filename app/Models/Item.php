@@ -21,6 +21,7 @@ class Item extends Model
     protected $fillable = [
         'title',
         'description',
+        'meta',
         'parent_id',
         'assignee_id',
         'reporter_id',
@@ -40,6 +41,7 @@ class Item extends Model
         'end_date' => 'date',
         'etd_date' => 'date',
         'eta_date' => 'date',
+        'meta' => 'array',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -111,7 +113,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'assignee_id', 'parent_id'])
+            ->logOnly(['title', 'assignee_id', 'parent_id', 'meta'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
