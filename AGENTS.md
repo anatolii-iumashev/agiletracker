@@ -11,6 +11,12 @@
 - Filament: https://filamentphp.com/docs/llms.txt
 - Laravel: https://laravel.com/docs/llms.txt
 
+## Project context files
+- `MARKETING.md` — marketing and target audience
+- `PRODUCT.md` — product, use cases, and components
+- `ROADMAP.md` — roadmap
+- `CHANGELOG.md` — changes by release
+
 ## Setup commands
 ```bash
 composer install
