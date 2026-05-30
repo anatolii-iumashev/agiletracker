@@ -6,19 +6,21 @@ use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Item;
 use App\Models\User;
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class ItemResource extends Resource
 {
     protected static ?string $model = Item::class;
-    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
-    protected static ?string $navigationGroup = 'Work';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-queue-list';
+    protected static UnitEnum|string|null $navigationGroup = 'Work';
     protected static ?int $navigationSort = 1;
 
     // ─── Global search ────────────────────────────────────────────────────────
@@ -35,9 +37,9 @@ class ItemResource extends Resource
 
     // ─── Form ─────────────────────────────────────────────────────────────────
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\Section::make('Overview')
                 ->columns(2)
                 ->schema([

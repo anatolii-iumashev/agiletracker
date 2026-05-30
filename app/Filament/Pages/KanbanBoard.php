@@ -3,15 +3,17 @@
 namespace App\Filament\Pages;
 
 use App\Models\Item;
+use BackedEnum;
 use Filament\Pages\Page;
 use Livewire\Attributes\On;
+use UnitEnum;
 
 class KanbanBoard extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-view-columns';
+    protected static BackedEnum|string|null $navigationIcon  = 'heroicon-o-view-columns';
     protected static ?string $navigationLabel = 'Kanban';
-    protected static ?string $navigationGroup = 'Work';
-    protected static string $view = 'filament.pages.kanban-board';
+    protected static UnitEnum|string|null $navigationGroup = 'Work';
+    protected string $view = 'filament.pages.kanban-board';
 
     public ?int $projectId = null;
 
