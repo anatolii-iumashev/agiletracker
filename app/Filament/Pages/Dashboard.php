@@ -7,6 +7,7 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\ItemResource;
 use App\Filament\Widgets\FavoritesWidget;
 use App\Filament\Widgets\InboxWidget;
+use App\Filament\Widgets\SentWidget;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -23,6 +24,7 @@ class Dashboard extends BaseDashboard
     {
         return [
             InboxWidget::class,
+            SentWidget::class,
             FavoritesWidget::class,
         ];
     }

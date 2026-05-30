@@ -6,25 +6,14 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\ItemResource;
 use App\Models\Item;
-use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 
-class InboxWidget extends BaseWidget
+class SentWidget extends BaseWidget
 {
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('openInbox')
-                ->label('Open Inbox')
-                ->icon('heroicon-o-arrow-top-right-on-square')
-                ->url('/inbox'),
-        ];
-    }
-
-    protected static ?string $heading = 'Inbox';
+    protected static ?string $heading = 'Sent';
 
     protected int|string|array $columnSpan = 'full';
 
@@ -32,7 +21,7 @@ class InboxWidget extends BaseWidget
     {
         return $table
             ->query(fn (): Builder => Item::query()
-                ->whereHas('to', fn (Builder $q) => $q->where('user_id', auth()->id()))
+                ->where('reporter_id', auth()->id())
                 ->orderBy('position')
                 ->limit(3)
             )
@@ -42,9 +31,14 @@ class InboxWidget extends BaseWidget
                     ->limit(60)
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
-                Tables\Columns\TextColumn::make('reporter.name')
-                    ->label('From')
+                Tables\Columns\TextColumn::make('assignee.name')
+                    ->label('To')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('cc.name')
+                    ->label('CC')
+                    ->badge()
+                    ->state(fn (Item $record) => $record->cc->pluck('name')->join(', ')),
 
                 Tables\Columns\TextColumn::make('labels.name')
                     ->label('Labels')

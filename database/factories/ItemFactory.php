@@ -21,8 +21,6 @@ class ItemFactory extends Factory
             'title' => fake()->sentence(4),
             'description' => fake()->boolean(60) ? fake()->sentence(10) : null,
             'due_date' => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
-            'estimated_minutes' => fake()->boolean(50) ? fake()->numberBetween(30, 480) : null,
-            'spent_minutes' => 0,
             'position' => fake()->numberBetween(0, 100),
         ];
     }

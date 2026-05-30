@@ -6,6 +6,7 @@ use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
@@ -40,6 +41,14 @@ class MainPanelProvider extends PanelProvider
                 'My',
                 'Collections',
                 'Settings',
+            ])
+            ->navigationItems([
+                NavigationItem::make('GitHub')
+                    ->label('GitHub')
+                    ->url('https://github.com/anatolii-iumashev/agiletracker', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-link')
+                    ->group('Settings')
+                    ->sort(999),
             ])
             ->middleware([
                 EncryptCookies::class,

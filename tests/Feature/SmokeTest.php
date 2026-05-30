@@ -33,8 +33,9 @@ test('guest cannot access admin pages', function (string $path) {
 
     $response->assertRedirect('/login');
 })->with([
-    '/i',
+    '/items',
     '/users',
+    '/manage-settings',
     '/labels',
     '/inbox',
     '/kanban-board',
@@ -52,7 +53,7 @@ test('authenticated user can access panel pages', function (string $path) {
     $response->assertStatus(200);
 })->with([
     '/',
-    '/i',
+    '/items',
     '/users',
     '/labels',
     '/inbox',
