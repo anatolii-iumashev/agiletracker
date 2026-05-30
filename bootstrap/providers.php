@@ -1,9 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
-use App\Providers\Filament\AdminPanelProvider;
+use App\Providers\Filament\MainPanelProvider;
 
 return [
     AppServiceProvider::class,
-    AdminPanelProvider::class,
+    MainPanelProvider::class,
 ];
