@@ -27,8 +27,3 @@ tags: conventions, workflow, code-style
 - Pages in `app/Filament/Pages/`
 - Widgets in `app/Filament/Widgets/`
 - Custom theme in `resources/css/filament/admin/theme.css`
-
-### Git
-- Branch: `feature/xxx`, `fix/xxx`, `refactor/xxx`
-- Commit messages: imperative mood ("Add item status filter")
-- PRs require code review before merge
