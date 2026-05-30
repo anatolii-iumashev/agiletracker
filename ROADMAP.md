@@ -3,6 +3,11 @@
 - [ ] alfa 2
     - Parent & Labels - as section General
     - Meta - JSON field
+    - docs/rfc/2026-05-30-plugin-system.md
+    - docs/rfc/2026-05-30-settings-system.md
+
+- [ ] alfa 3
+    - TBD
 
 ## Upcoming
 

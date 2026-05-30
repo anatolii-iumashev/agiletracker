@@ -14,41 +14,9 @@ A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Red
 
 ---
 
-## Quick start
+## Local development
 
-```bash
-# 1. Create a Laravel project and copy these files into it
-composer create-project laravel/laravel agile-tracker
-cd agile-tracker
-
-# 2. Install dependencies
-composer require filament/filament:"^3.0" -W
-composer require spatie/laravel-permission
-composer require spatie/laravel-activitylog
-
-# 3. Publish Filament panel
-php artisan filament:install --panels
-
-# 4. Publish vendor configs
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-php artisan vendor:publish \
-    --provider="Spatie\Activitylog\ActivitylogServiceProvider" \
-    --tag="activitylog-migrations"
-
-# 5. Configure .env (DB, APP_URL, etc.)
-cp .env.example .env
-php artisan key:generate
-
-# 6. Run migrations + seed
-php artisan migrate --seed
-
-# 7. Start dev server
-php artisan serve
-```
-
-Open **http://localhost:8000** and log in with:
-- Email: `admin@example.com`
-- Password: `password`
+See [docs/wiki/development.md](docs/wiki/development.md).
 
 ---
 
