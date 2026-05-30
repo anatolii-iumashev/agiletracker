@@ -14,7 +14,9 @@ class KanbanBoard extends Page
 
     protected static ?string $navigationLabel = 'Kanban';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Work';
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
+
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.kanban-board';
 

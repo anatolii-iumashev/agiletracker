@@ -27,7 +27,7 @@ class ItemResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-queue-list';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Work';
+    protected static UnitEnum|string|null $navigationGroup = 'Collections';
 
     protected static ?string $slug = 'i';
 
