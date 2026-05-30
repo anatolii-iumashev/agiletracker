@@ -49,7 +49,8 @@ class ItemResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Section::make('Overview')
+            Section::make('General')
+                ->columnSpanFull()
                 ->columns(2)
                 ->schema([
                     Forms\Components\TextInput::make('title')
@@ -64,10 +65,13 @@ class ItemResource extends Resource
                             'codeBlock', 'bulletList', 'orderedList',
                             'link', 'table',
                         ]),
-                ]),
 
-            Section::make('Labels')
-                ->schema([
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Parent')
+                        ->relationship('parent', 'title')
+                        ->searchable()
+                        ->nullable(),
+
                     Forms\Components\Select::make('labels')
                         ->label('Labels')
                         ->relationship('labels', 'name')
@@ -76,7 +80,8 @@ class ItemResource extends Resource
                         ->createOptionForm([
                             Forms\Components\TextInput::make('name')->required(),
                             Forms\Components\ColorPicker::make('color')->default('#6b7280'),
-                        ]),
+                        ])
+                        ->columnSpan(1),
                 ]),
 
             Section::make('Participants')
@@ -113,15 +118,6 @@ class ItemResource extends Resource
                         ->searchable()
                         ->preload()
                         ->columnSpanFull(),
-                ]),
-
-            Section::make('Hierarchy')
-                ->schema([
-                    Forms\Components\Select::make('parent_id')
-                        ->label('Parent')
-                        ->relationship('parent', 'title')
-                        ->searchable()
-                        ->nullable(),
                 ]),
 
             Section::make('Dates')
@@ -161,17 +157,38 @@ class ItemResource extends Resource
     {
         return $schema
             ->components([
-                Infolists\Components\TextEntry::make('description')
-                    ->hiddenLabel()
-                    ->markdown()
-                    ->default('No description.')
-                    ->columnSpanFull(),
+                Section::make('General')
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->schema([
+                        Infolists\Components\TextEntry::make('description')
+                            ->hiddenLabel()
+                            ->markdown()
+                            ->default('No description.')
+                            ->columnSpanFull(),
 
-                Infolists\Components\TextEntry::make('labels.name')
-                    ->label('Labels')
-                    ->badge()
-                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
-                    ->default('—'),
+                        Infolists\Components\TextEntry::make('parent.title')
+                            ->label('Parent')
+                            ->url(fn (?Item $record): ?string => $record?->parent
+                                ? ItemResource::getUrl('view', ['record' => $record->parent])
+                                : null
+                            )
+                            ->default('—'),
+
+                        Infolists\Components\TextEntry::make('labels.name')
+                            ->label('Labels')
+                            ->badge()
+                            ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
+                            ->default('—'),
+
+                        Infolists\Components\TextEntry::make('estimated_minutes')
+                            ->label('Est. (min)')
+                            ->default('—'),
+
+                        Infolists\Components\TextEntry::make('spent_minutes')
+                            ->label('Spent (min)')
+                            ->default('—'),
+                    ]),
 
                 Section::make('Participants')
                     ->schema([
@@ -194,15 +211,8 @@ class ItemResource extends Resource
                             ->visible(fn (Item $record): bool => $record->cc->isNotEmpty()),
                     ]),
 
-                Infolists\Components\TextEntry::make('parent.title')
-                    ->label('Parent')
-                    ->url(fn (?Item $record): ?string => $record?->parent
-                        ? ItemResource::getUrl('view', ['record' => $record->parent])
-                        : null
-                    )
-                    ->default('—'),
-
                 Section::make('Dates')
+                    ->columns(2)
                     ->schema([
                         Infolists\Components\TextEntry::make('due_date')
                             ->label('Due date')
@@ -236,16 +246,7 @@ class ItemResource extends Resource
                         Infolists\Components\TextEntry::make('updated_at')
                             ->label('Updated')
                             ->dateTime('M j, Y H:i'),
-                    ])
-                    ->columns(2),
-
-                Infolists\Components\TextEntry::make('estimated_minutes')
-                    ->label('Est. (min)')
-                    ->default('—'),
-
-                Infolists\Components\TextEntry::make('spent_minutes')
-                    ->label('Spent (min)')
-                    ->default('—'),
+                    ]),
             ]);
     }
 
