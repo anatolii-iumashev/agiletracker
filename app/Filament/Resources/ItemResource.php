@@ -11,6 +11,7 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Infolists;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -162,6 +163,97 @@ class ItemResource extends Resource
                         ->default(0),
                 ]),
         ]);
+    }
+
+    // ─── Infolist ─────────────────────────────────────────────────────────────
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make()
+                    ->columns(4)
+                    ->schema([
+                        // Left side (3/4) — description
+                        Section::make('Description')
+                            ->columnSpan(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('description')
+                                    ->hiddenLabel()
+                                    ->markdown()
+                                    ->default('No description.'),
+                            ]),
+
+                        // Right sidebar (1/4) — metadata fields
+                        Section::make()
+                            ->columnSpan(1)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('type')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'project' => 'primary',
+                                        'epic' => 'warning',
+                                        'task' => 'success',
+                                        'case' => 'gray',
+                                        default => 'gray',
+                                    }),
+
+                                Infolists\Components\TextEntry::make('status')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'todo' => 'gray',
+                                        'in_progress' => 'warning',
+                                        'review' => 'info',
+                                        'done' => 'success',
+                                        default => 'gray',
+                                    }),
+
+                                Infolists\Components\TextEntry::make('priority')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'low' => 'gray',
+                                        'medium' => 'primary',
+                                        'high' => 'warning',
+                                        'critical' => 'danger',
+                                        default => 'gray',
+                                    }),
+
+                                Infolists\Components\TextEntry::make('assignee.name')
+                                    ->label('Assignee')
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('reporter.name')
+                                    ->label('Reporter')
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('parent.title')
+                                    ->label('Parent')
+                                    ->url(fn (?Item $record): ?string => $record?->parent
+                                        ? ItemResource::getUrl('view', ['record' => $record->parent])
+                                        : null
+                                    )
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('labels.name')
+                                    ->label('Labels')
+                                    ->badge()
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('due_date')
+                                    ->label('Due date')
+                                    ->date()
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('estimated_minutes')
+                                    ->label('Est. (min)')
+                                    ->default('—'),
+
+                                Infolists\Components\TextEntry::make('spent_minutes')
+                                    ->label('Spent (min)')
+                                    ->default('—'),
+                            ]),
+                    ]),
+            ]);
     }
 
     // ─── Table ────────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 class CommentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'comments';
+
     protected static ?string $title = 'Comments';
 
     public function form(Schema $schema): Schema
@@ -46,6 +47,7 @@ class CommentsRelationManager extends RelationManager
                 CreateAction::make()
                     ->mutateFormDataUsing(function (array $data) {
                         $data['user_id'] = auth()->id();
+
                         return $data;
                     }),
             ])

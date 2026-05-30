@@ -10,18 +10,21 @@ use UnitEnum;
 
 class KanbanBoard extends Page
 {
-    protected static BackedEnum|string|null $navigationIcon  = 'heroicon-o-view-columns';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-view-columns';
+
     protected static ?string $navigationLabel = 'Kanban';
+
     protected static UnitEnum|string|null $navigationGroup = 'Work';
+
     protected string $view = 'filament.pages.kanban-board';
 
     public ?int $projectId = null;
 
     public array $columns = [
-        'todo'        => 'To Do',
+        'todo' => 'To Do',
         'in_progress' => 'In Progress',
-        'review'      => 'Review',
-        'done'        => 'Done',
+        'review' => 'Review',
+        'done' => 'Done',
     ];
 
     public function getItemsByStatus(): array
@@ -46,7 +49,7 @@ class KanbanBoard extends Page
     public function moveItem(int $itemId, string $newStatus, int $position): void
     {
         Item::where('id', $itemId)->update([
-            'status'   => $newStatus,
+            'status' => $newStatus,
             'position' => $position,
         ]);
     }

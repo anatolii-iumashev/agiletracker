@@ -26,6 +26,7 @@ class Comment extends Model
     public function getMentionsAttribute(): array
     {
         preg_match_all('/@([\w]+)/', $this->body, $matches);
+
         return $matches[1] ?? [];
     }
 }

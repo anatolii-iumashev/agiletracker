@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Item extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'type',
@@ -31,9 +31,9 @@ class Item extends Model
     ];
 
     protected $casts = [
-        'due_date'           => 'date',
-        'estimated_minutes'  => 'integer',
-        'spent_minutes'      => 'integer',
+        'due_date' => 'date',
+        'estimated_minutes' => 'integer',
+        'spent_minutes' => 'integer',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -113,10 +113,10 @@ class Item extends Model
     public function convertTo(string $newType): static
     {
         $allowed = [
-            'task'    => ['epic', 'project'],
-            'epic'    => ['project', 'task'],
+            'task' => ['epic', 'project'],
+            'epic' => ['project', 'task'],
             'project' => ['epic'],
-            'case'    => ['task', 'epic'],
+            'case' => ['task', 'epic'],
         ];
 
         if (! in_array($newType, $allowed[$this->type] ?? [])) {

@@ -20,15 +20,15 @@ class ItemFactory extends Factory
         $type = fake()->randomElement(['task', 'epic', 'project', 'case']);
 
         return [
-            'type'              => $type,
-            'title'             => $this->titleForType($type),
-            'description'       => fake()->boolean(60) ? fake()->sentence(10) : null,
-            'status'            => fake()->randomElement(['todo', 'in_progress', 'review', 'done']),
-            'priority'          => fake()->randomElement(['low', 'medium', 'high', 'critical']),
-            'due_date'          => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
+            'type' => $type,
+            'title' => $this->titleForType($type),
+            'description' => fake()->boolean(60) ? fake()->sentence(10) : null,
+            'status' => fake()->randomElement(['todo', 'in_progress', 'review', 'done']),
+            'priority' => fake()->randomElement(['low', 'medium', 'high', 'critical']),
+            'due_date' => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
             'estimated_minutes' => fake()->boolean(50) ? fake()->numberBetween(30, 480) : null,
-            'spent_minutes'     => 0,
-            'position'          => fake()->numberBetween(0, 100),
+            'spent_minutes' => 0,
+            'position' => fake()->numberBetween(0, 100),
         ];
     }
 
@@ -65,7 +65,7 @@ class ItemFactory extends Factory
     private function titleForType(string $type): string
     {
         return match ($type) {
-            'task'    => fake()->randomElement([
+            'task' => fake()->randomElement([
                 'Set up CI/CD pipeline',
                 'Write unit tests for auth module',
                 'Update API documentation',
@@ -79,7 +79,7 @@ class ItemFactory extends Factory
                 'Create onboarding wizard',
                 'Fix mobile layout issues',
             ]),
-            'case'    => fake()->randomElement([
+            'case' => fake()->randomElement([
                 'Login page crashes on Safari',
                 'Email notifications not sending',
                 'Dashboard charts rendering incorrectly',
@@ -87,7 +87,7 @@ class ItemFactory extends Factory
                 'Search returns incorrect results',
                 'PDF export missing data in footer',
             ]),
-            'epic'    => fake()->randomElement([
+            'epic' => fake()->randomElement([
                 'Q3 Platform Modernization',
                 'Performance Optimization Sprint',
                 'Accessibility Compliance',
@@ -97,7 +97,7 @@ class ItemFactory extends Factory
                 'Mobile App',
                 'API v2',
             ]),
-            default   => fake()->sentence(4),
+            default => fake()->sentence(4),
         };
     }
 }

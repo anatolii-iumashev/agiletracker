@@ -52,24 +52,24 @@ class DatabaseSeeder extends Seeder
         // ─── Projects ─────────────────────────────────────────────────────
 
         $project1 = Item::factory()->project()->create([
-            'title'       => 'AgileTracker Core',
+            'title' => 'AgileTracker Core',
             'description' => 'Core functionality for the AgileTracker project management tool.',
-            'status'      => 'in_progress',
-            'priority'    => 'high',
+            'status' => 'in_progress',
+            'priority' => 'high',
         ]);
 
         $project2 = Item::factory()->project()->create([
-            'title'       => 'Mobile App',
+            'title' => 'Mobile App',
             'description' => 'React Native mobile application for on-the-go task management.',
-            'status'      => 'todo',
-            'priority'    => 'medium',
+            'status' => 'todo',
+            'priority' => 'medium',
         ]);
 
         $project3 = Item::factory()->project()->create([
-            'title'       => 'API v2',
+            'title' => 'API v2',
             'description' => 'Public REST API for third-party integrations.',
-            'status'      => 'done',
-            'priority'    => 'high',
+            'status' => 'done',
+            'priority' => 'high',
         ]);
 
         // ─── Tasks ────────────────────────────────────────────────────────
@@ -94,13 +94,13 @@ class DatabaseSeeder extends Seeder
 
         foreach ($taskTitles as $i => $title) {
             Item::factory()->task()->create([
-                'title'        => $title,
-                'description'  => fake()->boolean(50) ? fake()->sentence(8) : null,
-                'parent_id'    => $projects[array_rand($projects)],
-                'assignee_id'  => $users[array_rand($users)]->id,
-                'reporter_id'  => $admin->id,
-                'due_date'     => fake()->boolean(60) ? now()->addDays(rand(1, 45)) : null,
-                'position'     => $i,
+                'title' => $title,
+                'description' => fake()->boolean(50) ? fake()->sentence(8) : null,
+                'parent_id' => $projects[array_rand($projects)],
+                'assignee_id' => $users[array_rand($users)]->id,
+                'reporter_id' => $admin->id,
+                'due_date' => fake()->boolean(60) ? now()->addDays(rand(1, 45)) : null,
+                'position' => $i,
             ]);
         }
     }

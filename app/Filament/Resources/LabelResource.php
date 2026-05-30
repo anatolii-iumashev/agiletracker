@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\LabelResource\Pages\CreateLabel;
+use App\Filament\Resources\LabelResource\Pages\EditLabel;
+use App\Filament\Resources\LabelResource\Pages\ListLabels;
 use App\Models\Label;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
@@ -16,8 +19,11 @@ use UnitEnum;
 class LabelResource extends Resource
 {
     protected static ?string $model = Label::class;
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-tag';
+
     protected static UnitEnum|string|null $navigationGroup = 'Settings';
+
     protected static ?int $navigationSort = 10;
 
     public static function form(Schema $schema): Schema
@@ -51,9 +57,9 @@ class LabelResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => \App\Filament\Resources\LabelResource\Pages\ListLabels::route('/'),
-            'create' => \App\Filament\Resources\LabelResource\Pages\CreateLabel::route('/create'),
-            'edit'   => \App\Filament\Resources\LabelResource\Pages\EditLabel::route('/{record}/edit'),
+            'index' => ListLabels::route('/'),
+            'create' => CreateLabel::route('/create'),
+            'edit' => EditLabel::route('/{record}/edit'),
         ];
     }
 }
