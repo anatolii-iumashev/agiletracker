@@ -24,6 +24,7 @@ class MainPanelProvider extends PanelProvider
             ->default()
             ->id('main')
             ->path('')
+            ->spa()
             ->login()
             ->maxContentWidth(Width::Full)
             ->colors([
