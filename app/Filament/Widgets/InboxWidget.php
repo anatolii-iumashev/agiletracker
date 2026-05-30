@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class InboxWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Top 10 Inbox Items';
+    protected static ?string $heading = 'Inbox';
 
     protected int|string|array $columnSpan = 'full';
 
@@ -36,7 +36,6 @@ class InboxWidget extends BaseWidget
                     ]),
 
                 Tables\Columns\TextColumn::make('title')
-                    ->searchable()
                     ->sortable()
                     ->limit(60)
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),

@@ -1,24 +1,23 @@
 # ROADMAP — AgileTracker
 
 - [ ] alfa 1
-    - docs/rfc/2026-05-30-favorite-bookmarks.md 
-    - Dashboard 
-        - add action New Item
-        - Top 10 Inbox Items - убрать поиск и переименовать в виджет в Inbox
-        - также надо вывести виджет таблицы Favorite на Dashboard (после реализации модели и ресурса Favorite)
-    - Type - remove - replace to Labels
-    - Favorite - модель и ресурс - юзер может разные типы объектов и ссылки добавлять к себе в избранное - вывод через ресурс с полиморфной связью
-    - http://localhost:8001/items - тут не нужен экшен Convert type
-    - $navigationGroup = 'Work' - надо поменять на Collections
-    - http://localhost:8001/items - заменить на http://localhost:8001/search
+    - Labels
+        - Type - remove - replace to 
     **done:**
+        - Dashboard 
+            - add action New Item
+            - Top 10 Inbox Items - убрать поиск и переименовать в виджет в Inbox
+            - также надо вывести виджет таблицы Favorite на Dashboard (после реализации модели и ресурса Favorite)
+        - http://localhost:8001/items - заменить на http://localhost:8001/search
+        - $navigationGroup = 'Work' - надо поменять на Collections
+        - http://localhost:8001/items - тут не нужен экшен Convert type
         - edit item http://localhost:8000/i/4/edit - поправь экшены - Save and view, Save and Delete
         - [x] какие то базовые смок тесты - но настроить на базе PestPHP 
         - [x] AdminPanelProvider - переименовать в MainPanelProvider + id = main и юзать для всех панелей
         - check this https://filamentphp.com/docs/5.x/introduction/ai
         - это что такое? /Users/aa/Projects/agiletracker/lang/vendor/filament-panels
         - тут ошибка http://localhost:8001/items/4/edit 
-
+        - Favorite - модель и ресурс - юзер может разные типы объектов и ссылки добавлять к себе в избранное - вывод через ресурс с полиморфной связью  docs/rfc/2026-05-30-favorite-bookmarks.md 
 
 ## Upcoming
 

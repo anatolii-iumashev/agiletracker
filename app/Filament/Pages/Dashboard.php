@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\ItemResource;
+use App\Filament\Widgets\FavoritesWidget;
 use App\Filament\Widgets\InboxWidget;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -20,6 +23,17 @@ class Dashboard extends BaseDashboard
     {
         return [
             InboxWidget::class,
+            FavoritesWidget::class,
+        ];
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('newItem')
+                ->label('New Item')
+                ->icon('heroicon-o-plus')
+                ->url(ItemResource::getUrl('create')),
         ];
     }
 }
