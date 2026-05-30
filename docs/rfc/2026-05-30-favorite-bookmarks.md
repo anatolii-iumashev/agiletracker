@@ -1,10 +1,10 @@
-# RFC: Favorite — избранное (полиморфные закладки)
+# RFC: Favorite — polymorphic bookmarks
 
 
 
 ## TL;DR
 
-Создать модель `Favorite` с полиморфной связью через MorphTo. Пользователь может добавлять в избранное как внешние ссылки, так и любые объекты системы: Items, Users, и др.
+Create a `Favorite` model with a polymorphic relationship via MorphTo. Users can bookmark both external links and any system objects: Items, Users, and more.
 
 ---
 
@@ -12,36 +12,36 @@
 
 ### What?
 
-Модель `Favorite` — элемент избранного (закладка).
+`Favorite` model — a bookmark / saved item.
 
-Два варианта:
+Two variants:
 
-1. **Внешняя ссылка** — произвольный URL + заголовок (не привязана к системному объекту)
-2. **Закладка на объект** — ссылка на Item, User или другой favoritable-объект в системе
+1. **External link** — an arbitrary URL + title (not linked to any system object)
+2. **Object bookmark** — a reference to an Item, User, or other favoritable object in the system
 
-Модель и вьюхи должны учитывать оба варианта. Полиморфная связь `favoritable` позволяет добавлять в избранное любые модели без изменения их схемы.
+Both variants must be handled by the model and views. The polymorphic `favoritable` relationship allows bookmarking any model without changing its schema.
 
-Страница **Favorite** в навигации (группа My) — показывает все закладки текущего пользователя.
+**Favorite** page in navigation (My group) — shows all bookmarks for the current user.
 
 ### Why?
 
-Нужен единый механизм «избранного»:
-- Закрепить важные задачи/проекты для быстрого доступа
-- Сохранить внешнюю ссылку (документацию, референс) прямо в системе
-- Полиморфная схема позволяет в будущем добавлять закладки на любые сущности без миграций
+A unified "bookmarks" mechanism is needed:
+- Pin important tasks/projects for quick access
+- Save an external link (documentation, reference) directly in the system
+- The polymorphic schema allows adding bookmarks to any entity in the future without migrations
 
 ### How?
 
-1. **Миграция** — таблица `favorites`
-2. **Модель `Favorite`** — `MorphTo` на `favoritable`, `BelongsTo` на `user`
-3. **Страница Favorite** — кастомная страница со списком избранного (таблица + ссылки на оригинальные объекты)
-4. **Трейт `Favoritable`** — для моделей, которые можно добавлять в избранное
+1. **Migration** — `favorites` table
+2. **`Favorite` model** — `MorphTo` on `favoritable`, `BelongsTo` on `user`
+3. **Favorite page** — custom page with a list of bookmarks (table + links to original objects)
+4. **`Favoritable` trait** — for models that can be bookmarked
 
 ---
 
 ## Components & Specifics
 
-### Модель данных
+### Data model
 
 ```mermaid
 erDiagram
@@ -49,8 +49,8 @@ erDiagram
         int id PK
         int user_id FK
         string name
-        string url "для внешних ссылок"
-        string favoritable_type "nullable — App\\Models\\Item и т.д."
+        string url "for external links"
+        string favoritable_type "nullable — App\\Models\\Item, etc."
         int favoritable_id "nullable"
         datetime created_at
     }
@@ -63,20 +63,20 @@ erDiagram
     Favorite }o--o| User : "favoritable (polymorphic)"
 ```
 
-### Миграция: `favorites`
+### Migration: `favorites`
 
 ```
 favorites:
   id                  bigint PK
   user_id             foreignId → users.id, cascade
-  name                string     — название закладки
-  url                 string nullable — внешняя ссылка
+  name                string     — bookmark label
+  url                 string nullable — external link
   favoritable_type    string nullable — morph type
   favoritable_id      bigint nullable  — morph id
   created_at          timestamp
 ```
 
-### Модель Favorite
+### Favorite model
 
 ```php
 class Favorite extends Model
@@ -88,7 +88,7 @@ class Favorite extends Model
 }
 ```
 
-### Трейт Favoritable
+### Favoritable trait
 
 ```php
 trait Favoritable
@@ -100,49 +100,49 @@ trait Favoritable
 }
 ```
 
-Подключается к `Item`, `User` — любым моделям, которые хотим добавлять в избранное.
+Attached to `Item`, `User` — any models we want to make bookmarkable.
 
-### Валидация
+### Validation
 
-- Если `url` заполнен → внешняя ссылка, `favoritable_*` = null
-- Если `favoritable_type` заполнен → закладка на объект, `url` = null
-- `name` — обязательное (можно авто-заполнить из `favoritable` title/name или из `url`)
+- If `url` is filled → external link, `favoritable_*` = null
+- If `favoritable_type` is filled → bookmark on an object, `url` = null
+- `name` — required (can be auto-filled from `favoritable` title/name or from `url`)
 
-### Страница Favorite
+### Favorite page
 
-Кастомная Filament Page в группе My (sort = 3). Показывает таблицу избранного:
+Custom Filament Page in the My group (sort = 3). Shows a table of bookmarks:
 
-| Колонка | Источник |
-|---------|----------|
+| Column  | Source |
+|---------|--------|
 | Name    | `favorite.name` |
 | Type    | badge: «Link» / «Item» / «User» |
-| Details | кликабельная: внешняя ссылка или ссылка на favoritable-объект |
+| Details | clickable: external link or link to favoritable object |
 
-Добавление в избранное — через Action на странице Favorite (форма с выбором типа: внешняя ссылка или внутренний объект).
+Adding to favorites — via an Action on the Favorite page (form with type selection: external link or internal object).
 
 ### Out of scope
 
-- «Звёздочка» на странице задачи для быстрого добавления в избранное (будет позже)
-- Сортировка/группировка закладок
-- Иконки для закладок (favicon внешних ссылок)
+- «Star» on the task page for quick bookmarking (later)
+- Bookmark sorting/grouping
+- Bookmark icons (favicons for external links)
 
 ### Constraints
 
-- Закладка всегда принадлежит одному пользователю
-- `url` и `favoritable` — взаимоисключающие (валидация)
-- Один пользователь может добавить один и тот же объект только один раз (уникальность по `user_id + favoritable_type + favoritable_id`)
+- A bookmark always belongs to one user
+- `url` and `favoritable` — mutually exclusive (validation)
+- A user can bookmark the same object only once (uniqueness on `user_id + favoritable_type + favoritable_id`)
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Миграция: таблица `favorites` создана
-- [ ] Модель `Favorite` с `MorphTo` (favoritable) и `BelongsTo User`
-- [ ] Трейт `Favoritable` работает с `Item` и `User`
-- [ ] Страница Favorite показывает избранное текущего пользователя
-- [ ] Action «Add to favorites» на странице Favorite (форма: внешняя ссылка ИЛИ внутренний объект)
-- [ ] Валидация: url XOR favoritable
-- [ ] Навигация: Favorite в группе My (sort = 3)
+- [ ] Migration: `favorites` table created
+- [ ] `Favorite` model with `MorphTo` (favoritable) and `BelongsTo User`
+- [ ] `Favoritable` trait works with `Item` and `User`
+- [ ] Favorite page shows the current user's bookmarks
+- [ ] «Add to favorites» Action on the Favorite page (form: external link OR internal object)
+- [ ] Validation: url XOR favoritable
+- [ ] Navigation: Favorite in My group (sort = 3)
 - [ ] `./vendor/bin/pint` — passes
 - [ ] `php artisan test` — passes
 
@@ -150,7 +150,7 @@ trait Favoritable
 
 ## Addenda
 
-### Пример использования
+### Usage example
 
 ```
 Favorite:
@@ -159,8 +159,8 @@ Favorite:
   name: "Alice Johnson"       → favoritable = User #2
 ```
 
-### План
+### Plan
 
-1. Миграция + модель + трейт
-2. Страница Favorite (таблица избранного + Action для добавления)
-3. Подключить Favoritable к Item и User
+1. Migration + model + trait
+2. Favorite page (bookmarks table + Action to add)
+3. Attach Favoritable to Item and User
