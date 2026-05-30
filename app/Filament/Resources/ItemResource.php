@@ -28,7 +28,7 @@ class ItemResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Collections';
 
-    protected static ?string $slug = 'i';
+    protected static ?string $slug = 'items';
 
     protected static ?int $navigationSort = 1;
 
@@ -194,13 +194,13 @@ class ItemResource extends Resource
 
                         Infolists\Components\TextEntry::make('to_names')
                             ->label('To')
-                            ->state(fn (Item $record): string => $record->to->pluck('name')->join(', '))
-                            ->visible(fn (Item $record): bool => $record->to->isNotEmpty()),
+                            ->state(fn (?Item $record): string => $record?->to?->pluck('name')?->join(', ') ?? '')
+                            ->visible(fn (?Item $record): bool => filled($record?->to)),
 
                         Infolists\Components\TextEntry::make('cc_names')
                             ->label('CC')
-                            ->state(fn (Item $record): string => $record->cc->pluck('name')->join(', '))
-                            ->visible(fn (Item $record): bool => $record->cc->isNotEmpty()),
+                            ->state(fn (?Item $record): string => $record?->cc?->pluck('name')?->join(', ') ?? '')
+                            ->visible(fn (?Item $record): bool => filled($record?->cc)),
                     ]),
 
                 Section::make('Dates')
@@ -248,20 +248,25 @@ class ItemResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('title')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(60)
+                    ->url(fn (?Item $record): string => $record ? ItemResource::getUrl('view', ['record' => $record]) : '#'),
+
                 Tables\Columns\TextColumn::make('labels.name')
                     ->label('Labels')
                     ->badge()
                     ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
-                Tables\Columns\TextColumn::make('title')
-                    ->searchable()
-                    ->sortable()
-                    ->limit(60)
-                    ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
-
-                Tables\Columns\TextColumn::make('assignee.name')
-                    ->label('Assignee')
+                Tables\Columns\TextColumn::make('reporter.name')
+                    ->label('From')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('to_names')
+                    ->label('To')
+                    ->state(fn (?Item $record): string => $record?->to?->pluck('name')?->join(', ') ?? '')
+                    ->visible(fn (?Item $record): bool => filled($record?->to)),
 
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()
@@ -299,8 +304,9 @@ class ItemResource extends Resource
                     ->relationship('labels', 'name')
                     ->label('Label'),
 
-                Tables\Filters\SelectFilter::make('assignee')
-                    ->relationship('assignee', 'name'),
+                Tables\Filters\SelectFilter::make('reporter')
+                    ->relationship('reporter', 'name')
+                    ->label('From'),
             ])
             ->actions([
                 EditAction::make(),

@@ -3,8 +3,9 @@
 
 ## MVP
 - [ ] alfa 2
-    - List  Items - Labels должно быть после Title
+    - changelog - add list for alfa 2
     - **done**
+    - List  Items - Labels должно быть после Title
     - docs/rfc/2026-05-30-settings-system.md
     - [x] Items - add Meta field - JSON field
     - Parent & Labels - as section General
