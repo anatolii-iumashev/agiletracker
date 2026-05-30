@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Concerns\Favoritable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, HasRoles, Notifiable;
+    use Favoritable, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = ['name', 'email', 'password'];
 
@@ -52,5 +55,10 @@ class User extends Authenticatable implements FilamentUser
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
     }
 }
