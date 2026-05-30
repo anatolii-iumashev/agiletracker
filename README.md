@@ -52,6 +52,55 @@ Open **http://localhost:8000/admin** and log in with:
 
 ---
 
+## AI Agent Configuration (`.agents/`)
+
+This project follows the [.agents Protocol](https://dotagentsprotocol.com/) — an open standard for AI agent configuration. Everything an AI coding agent needs lives in one vendor-neutral directory:
+
+```
+.agents/
+├── agents.md              # project guidelines (AGENTS.md compatible)
+├── system-prompt.md       # system prompt for AI assistants
+├── mcp.json               # MCP server configuration
+├── models.json            # model presets & provider keys
+├── settings.json          # general settings
+├── layouts/ui.json        # UI/layout preferences
+├── skills/                # codified procedural knowledge
+│   ├── laravel-filament-dev/
+│   ├── code-review/
+│   └── schema-design/
+├── agents/                # sub-agent profiles
+│   ├── backend-dev/
+│   ├── code-reviewer/
+│   └── frontend-dev/
+├── tasks/                 # scheduled repeat tasks
+│   ├── daily-review/
+│   └── weekly-cleanup/
+└── memories/              # persistent memory across sessions
+    ├── architecture.md
+    ├── schema.md
+    └── conventions.md
+```
+
+### Available Sub-Agents
+
+| Agent | Role | Description |
+|-------|------|-------------|
+| `backend-dev` | Backend Developer | Laravel/PHP backend specialist |
+| `code-reviewer` | Code Reviewer | Security, performance, code quality |
+| `frontend-dev` | Frontend Developer | Tailwind CSS & Filament UI |
+
+### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `laravel-filament-dev` | Build features using Laravel 11 + FilamentPHP 3 |
+| `code-review` | Review code for quality, security, and performance |
+| `schema-design` | Design and review database schemas |
+
+The `.agents/` directory is **version-controlled** — commit it to share agent config with the team.
+
+---
+
 ## File structure (this scaffold)
 
 ```

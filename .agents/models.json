@@ -1,0 +1,17 @@
+{
+  "presets": {
+    "fast": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514"
+    },
+    "smart": {
+      "provider": "openai",
+      "model": "gpt-4o"
+    },
+    "code": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514"
+    }
+  },
+  "defaultPreset": "fast"
+}

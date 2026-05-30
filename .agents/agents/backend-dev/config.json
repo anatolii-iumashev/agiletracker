@@ -1,0 +1,13 @@
+{
+  "toolConfig": {
+    "disabledServers": [],
+    "enabledBuiltinTools": ["read_file", "grep_search", "file_search", "run_in_terminal"]
+  },
+  "modelConfig": {
+    "mcpToolsProviderId": "anthropic",
+    "mcpToolsOpenaiModel": "claude-sonnet-4-20250514"
+  },
+  "connection": {
+    "type": "internal"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "panels": {
+    "admin": {
+      "sidebar": "left",
+      "width": 240,
+      "collapsed": false
+    }
+  },
+  "editor": {
+    "fontSize": 14,
+    "tabSize": 4,
+    "wordWrap": true
+  }
+}

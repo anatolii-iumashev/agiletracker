@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-filesystem", "."],
+      "transport": "stdio"
+    },
+    "github": {
+      "url": "https://api.github.com/mcp",
+      "transport": "streamable-http"
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-sqlite", "database/database.sqlite"],
+      "transport": "stdio"
+    }
+  }
+}
