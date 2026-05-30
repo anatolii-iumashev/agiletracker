@@ -47,7 +47,14 @@ class Favorite extends Page implements HasTable
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
-                    ->limit(60),
+                    ->limit(60)
+                    ->url(fn (FavoriteModel $record): ?string => match (true) {
+                        $record->url !== null => $record->url,
+                        $record->favoritable_type === Item::class => ItemResource::getUrl('view', ['record' => $record->favoritable_id]),
+                        $record->favoritable_type === User::class => null,
+                        default => null,
+                    })
+                    ->openUrlInNewTab(fn (FavoriteModel $record): bool => $record->url !== null),
 
                 Tables\Columns\TextColumn::make('type_badge')
                     ->label('Type')

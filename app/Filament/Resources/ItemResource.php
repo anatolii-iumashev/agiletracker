@@ -28,7 +28,7 @@ class ItemResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Collections';
 
-    protected static ?string $slug = 'items';
+    protected static ?string $slug = 'i';
 
     protected static ?int $navigationSort = 1;
 

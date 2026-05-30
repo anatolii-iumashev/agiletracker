@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\Favorite;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
@@ -101,10 +102,46 @@ class DatabaseSeeder extends Seeder
 
         // ─── Tasks ────────────────────────────────────────────────────────
 
-        $users = [$admin, $alice, $bob, $carol];
+        $otherUsers = [$alice, $bob, $carol];
         $projects = [$project1->id, $project2->id, $project3->id];
 
-        $taskTitles = [
+        // ── Incoming tasks (assigned TO admin, from others) ──────────────────
+
+        $incomingTitles = [
+            'Review API documentation',
+            'Approve new user access request',
+            'Sign off on sprint deliverables',
+            'Resolve production incident #452',
+            'Code review: authentication module',
+            'Update team onboarding guide',
+            'Approve CI/CD pipeline changes',
+            'Review security audit report',
+        ];
+
+        foreach ($incomingTitles as $i => $title) {
+            $startDate = fake()->boolean(70) ? now()->subDays(rand(1, 30))->toDateString() : null;
+
+            $task = Item::factory()->create([
+                'title' => $title,
+                'description' => fake()->boolean(50) ? fake()->sentence(8) : null,
+                'parent_id' => $projects[array_rand($projects)],
+                'assignee_id' => $admin->id,
+                'reporter_id' => $otherUsers[array_rand($otherUsers)]->id,
+                'due_date' => fake()->boolean(60) ? now()->addDays(rand(1, 45)) : null,
+                'start_date' => $startDate,
+                'end_date' => $startDate ? now()->parse($startDate)->addDays(rand(1, 20))->toDateString() : null,
+                'etd_date' => fake()->boolean(40) ? now()->subDays(rand(0, 5))->toDateString() : null,
+                'eta_date' => fake()->boolean(40) ? now()->addDays(rand(1, 14))->toDateString() : null,
+                'position' => $i,
+            ]);
+
+            $task->labels()->sync([$labelTask->id, $labelTodo->id]);
+            $task->to()->sync([$admin->id]);
+        }
+
+        // ── Outgoing tasks (created BY admin, assigned to others) ────────────
+
+        $outgoingTitles = [
             'Set up CI/CD pipeline',
             'Write unit tests for auth module',
             'Fix pagination on search results',
@@ -115,28 +152,58 @@ class DatabaseSeeder extends Seeder
             'Add rate limiting to API',
             'Fix mobile layout issues',
             'Refactor notification service',
-            'Update dependencies',
-            'Build dashboard analytics',
         ];
 
-        foreach ($taskTitles as $i => $title) {
+        foreach ($outgoingTitles as $i => $title) {
             $startDate = fake()->boolean(70) ? now()->subDays(rand(1, 30))->toDateString() : null;
 
             $task = Item::factory()->create([
                 'title' => $title,
                 'description' => fake()->boolean(50) ? fake()->sentence(8) : null,
                 'parent_id' => $projects[array_rand($projects)],
-                'assignee_id' => $users[array_rand($users)]->id,
+                'assignee_id' => $otherUsers[array_rand($otherUsers)]->id,
                 'reporter_id' => $admin->id,
                 'due_date' => fake()->boolean(60) ? now()->addDays(rand(1, 45)) : null,
                 'start_date' => $startDate,
                 'end_date' => $startDate ? now()->parse($startDate)->addDays(rand(1, 20))->toDateString() : null,
                 'etd_date' => fake()->boolean(40) ? now()->subDays(rand(0, 5))->toDateString() : null,
                 'eta_date' => fake()->boolean(40) ? now()->addDays(rand(1, 14))->toDateString() : null,
-                'position' => $i,
+                'position' => $i + 100,
             ]);
 
-            $task->labels()->attach($labelTask);
+            $task->labels()->sync([$labelTask->id, $labelInProgress->id]);
+        }
+
+        // ─── Favorites ─────────────────────────────────────────────────────
+
+        $allItems = Item::whereNotNull('parent_id')->get();
+        $allUsers = User::all();
+
+        // Favorite some items
+        $itemFavorites = min(6, $allItems->count());
+        foreach ($allItems->random($itemFavorites) as $item) {
+            Favorite::firstOrCreate([
+                'user_id' => $admin->id,
+                'favoritable_type' => Item::class,
+                'favoritable_id' => $item->id,
+            ], [
+                'name' => $item->title,
+                'url' => '/i/'.$item->id,
+            ]);
+        }
+
+        // Favorite some users (except admin self)
+        $otherUsersForFav = User::where('id', '!=', $admin->id)->get();
+        $userFavorites = min(4, $otherUsersForFav->count());
+        foreach ($otherUsersForFav->random($userFavorites) as $user) {
+            Favorite::firstOrCreate([
+                'user_id' => $admin->id,
+                'favoritable_type' => User::class,
+                'favoritable_id' => $user->id,
+            ], [
+                'name' => $user->name,
+                'url' => '/users/'.$user->id,
+            ]);
         }
     }
 }
