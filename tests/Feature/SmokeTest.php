@@ -35,6 +35,7 @@ test('guest cannot access admin pages', function (string $path) {
 })->with([
     '/i',
     '/users',
+    '/manage-settings',
     '/labels',
     '/inbox',
     '/kanban-board',
