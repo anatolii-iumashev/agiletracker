@@ -2,16 +2,9 @@
 
 
 ## MVP
-- [ ] alfa 2
-    - changelog - add list for alfa 2
-    - **done**
-    - List  Items - Labels должно быть после Title
-    - docs/rfc/2026-05-30-settings-system.md
-    - [x] Items - add Meta field - JSON field
-    - Parent & Labels - as section General
-
 - [ ] alfa 3
     - docs/rfc/2026-05-30-plugin-system.md
+    - sidebar - collapsed
 
 - [ ] beta 1
     - merge migrations (one per model + one for settings)

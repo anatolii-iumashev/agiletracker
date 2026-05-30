@@ -21,7 +21,7 @@ class ManageSettings extends SettingsPage
 
     protected static ?string $navigationLabel = 'General';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = 5;
 
     protected static string $settings = GeneralSettings::class;
 

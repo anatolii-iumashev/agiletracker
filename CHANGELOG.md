@@ -6,7 +6,21 @@ If changes many - use categories (Added, Changed, Fixed, etc.)
 
 ## [2026.06.2-alpha] — 2026-06-01
 
-TBD
+Second alpha. Form layout restructuring, settings management, meta field, and UI polish.
+
+### Added
+- `ManageSettings` page for general settings management
+- `meta` JSON field on Item model (form + infolist)
+
+### Changed
+- ItemResource slug changed from `i` to `items`
+- ItemResource form reorganized into sections: General, Participants, Dates, Meta
+- Items table: Labels column moved after Title
+- Items table: Assignee column replaced with From (reporter) and To columns
+- README and development guide refactored for clarity
+
+### Removed
+- `estimated_minutes` and `spent_minutes` fields from Item
 
 ## [2026.05.1-alpha] — 2026-05-30
 
