@@ -2,14 +2,7 @@
 
 
 ## MVP
-- [ ] Alfa 2
-    - [x] Dashboard - add table Sent - sent items
-    - [x] Inbox - add From field - and to Dashboard widget
-    - [x] Sent - add To and CC fields - and to Dashboard widget
-    - [x] Favorites - title clickable - to url or object page
-    - [x] database/seeders/DatabaseSeeder.php 
-        - разбить - данные для авторизации - пользователи отдельно и демо данные для тестов отдельно
-        - по 3 записи в Inbox, Sent & Favorites для admin@example.com
+
 - [ ] Alfa 3
     - sidebar - collapsed
     - save files - on local and S3

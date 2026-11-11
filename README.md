@@ -1,18 +1,16 @@
 # AgileTracker
 
-A minimal project & task manager built with **Laravel & Filament PHP**. Jira/Redmine-alternative.
+A task tracker & project management tool built on **PHP, Laravel & Filament**. Agile by design.
 
 ![Dashboard](docs/images/dashboard.png)
 
 ## Stack
 
-- PHP 8.3+
-- Laravel 13
-- FilamentPHP 5
-- Spatie Laravel Permission (roles)
-- Spatie Laravel Activitylog (change history)
-- Tailwind CSS v4 (via Filament)
+- PHP 8.3+ (Laravel & Filament)
 - SQLite / MySQL / PostgreSQL
+- Agile by design — modern UI + flexible data model for tasks, epics, projects
+- AI agent configuration via `.agents/` directory (see below)
+- Open source, self-hosted, no vendor lock-in
 
 ---
 
