@@ -20,6 +20,16 @@ See [docs/wiki/development.md](docs/wiki/development.md).
 
 ---
 
+### 📦 Makefile
+
+| Command | Description |
+|---|---|
+| `make dev` | Full dev server (serve + queue + logs + vite) |
+| `make serve` | `php artisan serve` only |
+| `make test` | Run all tests |
+| `make db-fresh-seed` | Reset DB + seed |
+| `make build` | Build frontend assets |
+
 ## AI Agent Configuration (`.agents/`)
 
 This project follows the [.agents Protocol](https://dotagentsprotocol.com/) — an open standard for AI agent configuration. Everything an AI coding agent needs lives in one vendor-neutral directory:

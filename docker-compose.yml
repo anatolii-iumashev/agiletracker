@@ -1,0 +1,65 @@
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Production — fully self-contained image
+  # ═══════════════════════════════════════════════════════════════════════════
+  app:
+    profiles: [prod]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "http://localhost:${APP_PORT:-8000}"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: "/app/database/database.sqlite"
+      SESSION_DRIVER: file
+      LOG_CHANNEL: stderr
+    volumes:
+      - agiletracker-storage:/app/storage
+      - agiletracker-db:/app/database
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Development — volumes, Vite HMR, queue, file watcher
+  # ═══════════════════════════════════════════════════════════════════════════
+  app-dev:
+    profiles: [dev]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${DEV_PORT:-8001}:8000"
+      - "5173:5173"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:${APP_PORT:-8000}"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: "/app/database/database.sqlite"
+      SESSION_DRIVER: file
+      LOG_CHANNEL: stderr
+      XDEBUG_MODE: develop,debug
+      XDEBUG_CONFIG: |
+        client_host=host.docker.internal
+        discover_client_host=true
+        idekey=VSCODE
+    volumes:
+      # Mount entire project — live code reload
+      - .:/app
+      # Named volumes for state persistence
+      - agiletracker-storage:/app/storage
+      - agiletracker-db:/app/database
+    restart: unless-stopped
+
+volumes:
+  agiletracker-storage:
+  agiletracker-db:
