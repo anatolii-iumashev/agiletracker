@@ -96,6 +96,10 @@ created: 2026-11-11
 
 ### 6. Автоматическая OpenAPI-документация и проверка контракта
 
+Scramble выбран потому, что это единственный штатный способ Lomkit 3 автоматически строить OpenAPI из деклараций REST-ресурсов. Собственный генератор документации удалён из Lomkit 3, а поставляемые трансформеры Scramble используют те же fields, relations, filters, actions, limits и gates, что и работающий API. Это исключает параллельное описание контракта и соответствует исходной цели автодокументации.
+
+Scribe не является технически несовместимым с Lomkit, но готовой интеграции с Lomkit Resource у него нет. Scribe умеет извлекать ответы из Laravel API Resources (`JsonResource`), а не из деклараций `App\Rest\Resources\Resource`; схемы search/mutate, relations, filters и actions пришлось бы дублировать аннотациями либо поддерживать собственный адаптер. Поэтому Scribe не удовлетворяет требованию единого источника контракта без дополнительной разработки.
+
 - Scramble — production-зависимость: интерактивная документация доступна на `/docs/api`, ручная регистрация операций Lomkit не требуется.
 - Document transformer добавляет HTTP Bearer security scheme. Схемы автоматически покрывают все четыре ресурса, их details/search/mutate, разрешённые destroy, `assign`, typed fields, filters, relations, limits, validation и пакетные ошибки. Доменные 409 Item delete/hierarchy дополняются небольшим operation transformer.
 - `examples()` задаются полям и action inputs. Password схематично обозначен writeOnly; запрещённые relations и endpoints не попадают в документацию.
@@ -274,7 +278,9 @@ created: 2026-11-11
 - Relations: https://laravel-rest-api.lomkit.com/resources/relations
 - Events and hooks: https://laravel-rest-api.lomkit.com/digging-deeper/events-and-hooks
 - OpenAPI: https://laravel-rest-api.lomkit.com/digging-deeper/openapi
+- Удаление собственного генератора документации в Lomkit 3: https://github.com/Lomkit/laravel-rest-api/blob/v3.4.0/UPGRADE.md#built-in-documentation-generator-removed
 - Scramble export: https://scramble.dedoc.co/usage/export
+- Scribe API Resources и response calls: https://scribe.knuckles.wtf/laravel/documenting/responses
 
 ## Заметки
 

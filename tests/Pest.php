@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /*
@@ -57,3 +58,18 @@ function actingAsUser(): User
 
     return $user;
 }
+
+/**
+ * Authenticate the user for the API v1 with the given token abilities.
+ *
+ * @param  list<string>  $abilities
+ */
+function actingAsApi(array $abilities, ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+
+    Sanctum::actingAs($user, $abilities);
+
+    return $user;
+}
+

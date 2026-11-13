@@ -20,9 +20,15 @@ class ItemFactory extends Factory
         return [
             'title' => fake()->sentence(4),
             'description' => fake()->boolean(60) ? fake()->sentence(10) : null,
+            'is_epic' => false,
             'due_date' => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
             'position' => fake()->numberBetween(0, 100),
         ];
+    }
+
+    public function epic(): static
+    {
+        return $this->state(fn () => ['is_epic' => true]);
     }
 
     public function childOf(Item $parent): static
