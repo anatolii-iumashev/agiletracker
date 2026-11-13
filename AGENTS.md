@@ -2,7 +2,7 @@
 
 ## Project overview
 - **AgileTracker** — minimal project & task manager, Jira/Redmine alternative
-- Stack: Laravel 13, FilamentPHP 3, Tailwind CSS 4, Vite 8, PHP 8.3+
+- Stack: Laravel 13, FilamentPHP 5, Livewire 4, Tailwind CSS 4, Vite 8, PHP 8.4+
 - Key packages: `spatie/laravel-permission`, `spatie/laravel-activitylog`
 - Database: SQLite (dev/test), MySQL/PostgreSQL (prod)
 - License: MIT
