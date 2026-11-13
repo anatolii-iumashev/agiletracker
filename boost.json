@@ -14,7 +14,9 @@
     "sail": false,
     "skills": [
         "laravel-best-practices",
+        "pest-testing",
         "tailwindcss-development",
-        "laravel-permission-development"
+        "laravel-permission-development",
+        "filament-development"
     ]
 }
