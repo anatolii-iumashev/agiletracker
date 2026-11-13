@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Item extends Model
 {
@@ -21,6 +21,7 @@ class Item extends Model
     protected $fillable = [
         'title',
         'description',
+        'is_epic',
         'meta',
         'parent_id',
         'assignee_id',
@@ -36,6 +37,7 @@ class Item extends Model
     ];
 
     protected $casts = [
+        'is_epic' => 'boolean',
         'due_date' => 'date',
         'start_date' => 'date',
         'end_date' => 'date',
@@ -113,8 +115,8 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'assignee_id', 'parent_id', 'meta'])
+            ->logOnly(['title', 'assignee_id', 'parent_id', 'meta', 'is_epic'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontLogEmptyChanges();
     }
 }

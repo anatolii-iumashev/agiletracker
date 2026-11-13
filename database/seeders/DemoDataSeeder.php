@@ -68,8 +68,8 @@ class DemoDataSeeder extends Seeder
 
         $projects = [$project1->id, $project2->id, $project3->id];
 
-        // ── Inbox: 3 записи для admin@example.com ────────────────────────
-        foreach ([1,2,3] as $i) {
+        // ── Inbox: 3 entries for admin@example.com ───────────────────────
+        foreach ([1, 2, 3] as $i) {
             $task = Item::factory()->create([
                 'title' => "Inbox Task $i",
                 'parent_id' => $projects[array_rand($projects)],
@@ -80,8 +80,8 @@ class DemoDataSeeder extends Seeder
             $task->to()->sync([$admin->id]);
         }
 
-        // ── Sent: 3 записи для admin@example.com ─────────────────────────
-        foreach ([1,2,3] as $i) {
+        // ── Sent: 3 entries for admin@example.com ────────────────────────
+        foreach ([1, 2, 3] as $i) {
             $task = Item::factory()->create([
                 'title' => "Sent Task $i",
                 'parent_id' => $projects[array_rand($projects)],
@@ -91,7 +91,7 @@ class DemoDataSeeder extends Seeder
             $task->labels()->sync([$labelTask->id, $labelInProgress->id]);
         }
 
-        // ── Favorites: 3 записи для admin@example.com ────────────────────
+        // ── Favorites: 3 entries for admin@example.com ───────────────────
         $allItems = Item::whereNotNull('parent_id')->get();
         foreach ($allItems->random(min(3, $allItems->count())) as $item) {
             Favorite::firstOrCreate([

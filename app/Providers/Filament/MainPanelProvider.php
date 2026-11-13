@@ -10,6 +10,8 @@ use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,6 +29,10 @@ class MainPanelProvider extends PanelProvider
             ->path('')
             ->spa()
             ->login()
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): View => view('filament.autofill-sync'),
+            )
             ->maxContentWidth(Width::Full)
             ->colors([
                 'primary' => '#3b82f6',

@@ -4,6 +4,24 @@ Use date format for releases: `YYYY.MM.I` (e.g. `2026.05.1-alpha`).
 Use flat lists for changes
 If changes many - use categories (Added, Changed, Fixed, etc.)
 
+## [2026.11.1-alpha] — 2026-11-13
+
+Dependency refresh: every Composer and npm package is on its latest release.
+
+### Changed
+- Pest `4.7` → `5.3`, `pestphp/pest-plugin-laravel` `4.1` → `5.0`, PHPUnit `12.5` → `13.4` (Pest 5 caps PHPUnit at `13.4.5`)
+- `spatie/laravel-activitylog` `4.12` → `5.1`, `spatie/laravel-permission` `7.4` → `8.5`
+- PHP requirement `^8.3` → `^8.4` (Pest 5 and activitylog 5 require it)
+- npm: Vite `8.0` → `8.3`, Tailwind CSS `4.3.0` → `4.3.5`, `laravel-vite-plugin` `3.1` → `3.2`, `concurrently` `9` → `10`
+
+### Added
+- `config/activitylog.php` published from v5, plus the legacy `table_name`/`database_connection` keys the v4 migrations still read
+- Migration `upgrade_activity_log_to_v5_schema` — adds `attribute_changes`, drops `batch_uuid`, moves recorded changes out of `properties`, and creates the consolidated v5 table on fresh installs
+- `ActivityLoggingTest`/`ItemActivityLogOptionsTest` — tracked changes land in `attribute_changes`, untracked attributes are not logged, item log options stay dirty-only
+
+### Fixed
+- Item activity logging adapted to the v5 API: `Models\Concerns\LogsActivity`, `Support\LogOptions`, `dontLogEmptyChanges()`
+
 ## [2026.06.2-alpha] — 2026-06-01
 
 Second alpha. Form layout restructuring, settings management, meta field, and UI polish.
