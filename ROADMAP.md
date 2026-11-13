@@ -2,10 +2,10 @@
 
 ## MVP
 
-- [x] обнови все компоненты до последних версий - чтобы все было свежее
-- [ ] Alfa 3
-  - sidebar - collapsed
-  - save files - on local and S3
+- [ ] Alfa 26.11
+  - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
+    - sidebar - collapsed
+    - save files - on local and S3
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login
