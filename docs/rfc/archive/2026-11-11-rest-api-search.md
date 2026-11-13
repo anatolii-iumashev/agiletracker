@@ -1,236 +1,236 @@
 ---
-title: "REST API на Lomkit: Items, Users, Labels, Comments и OpenAPI"
+title: "REST API on Lomkit: Items, Users, Labels, Comments and OpenAPI"
 status: done
 created: 2026-11-11
 completed: 2026-11-13
 ---
 
-# RFC: REST API на Lomkit — Items, Users, Labels, Comments и автодокументация
+# RFC: REST API on Lomkit — Items, Users, Labels, Comments and auto-documentation
 
 ## TL DR
 
-Заменяем ещё не реализованную связку собственных CRUD-контроллеров, Laravel API Resources и Scribe на `lomkit/laravel-rest-api` 3.x с OpenAPI через Scramble. Публикуем четыре связанных REST-ресурса — `ItemResource`, `UserResource`, `LabelResource`, `CommentResource` — с едиными `details`, `search`, `mutate` и разрешёнными для каждого `destroy`/actions. Сохраняем доменную модель с `is_epic` и `meta.type`; интерактивная документация `/docs/api` и OpenAPI-снапшот генерируются из тех же деклараций, что и API.
+We replace the not-yet-implemented combination of custom CRUD controllers, Laravel API Resources and Scribe with `lomkit/laravel-rest-api` 3.x plus OpenAPI through Scramble. We publish four related REST resources — `ItemResource`, `UserResource`, `LabelResource`, `CommentResource` — with shared `details`, `search`, `mutate` and per-resource allowed `destroy`/actions. We keep the domain model with `is_epic` and `meta.type`; the interactive documentation at `/docs/api` and the OpenAPI snapshot are generated from the same declarations as the API.
 
-## Контекст
+## Context
 
-**Situation.** В коде API пока нет: отсутствуют `routes/api.php`, API-контроллеры и Sanctum. Проверка Composer, lockfile, конфигурации и public-артефактов подтверждает, что Scribe не установлен. `PRODUCT.md` декларирует Public API, а модели `Item`, `User`, `Label`, `Comment` уже связаны через Eloquent relations.
+**Situation.** There is no API in the code yet: `routes/api.php`, API controllers and Sanctum are all absent. Checking Composer, the lockfile, the configuration and the public artifacts confirms that Scribe is not installed. `PRODUCT.md` declares a Public API, and the `Item`, `User`, `Label`, `Comment` models are already linked through Eloquent relations.
 
-**Complication.** Ручной подход дублирует описание моделей в контроллерах, Form Requests, API Resources и документации. Одного Item API недостаточно для управления основными сущностями; при этом метрики в текущей постановке не нужны. Установлен Laravel `13.12.0`, а Lomkit Rest API 3 требует PHP 8.3+ и Laravel `13.30+`.
+**Complication.** The manual approach duplicates the model description across controllers, Form Requests, API Resources and documentation. A single Item API is not enough to manage the core entities, while metrics are not needed in the current scope. Laravel `13.12.0` is installed, and Lomkit Rest API 3 requires PHP 8.3+ and Laravel `13.30+`.
 
-**Question.** Как получить единый подход к нескольким моделям и REST-ресурсам, поиск, транзакционные изменения, действия и актуальную документацию без параллельных описаний контракта?
+**Question.** How do we get a single approach to several models and REST resources, search, transactional changes, actions and up-to-date documentation without parallel descriptions of the contract?
 
-**Answer.** До начала реализации переносим RFC на четыре декларативных ресурса Lomkit и Scramble, обновляем Laravel и используем штатные пакетные форматы запросов и ответов. Поскольку прежнего API в коде нет, слой совместимости с ручными CRUD-маршрутами не нужен.
+**Answer.** Before implementation we move the RFC onto four declarative Lomkit resources and Scramble, upgrade Laravel and use the package's native request and response formats. Since there is no previous API in the code, no compatibility layer for manual CRUD routes is needed.
 
-`docs/specs/` отсутствует; исходным состоянием служат код, миграции и текущий RFC. Другие активные RFC не регистрируют API и не конфликтуют с этим решением.
+`docs/specs/` does not exist; the starting state is the code, the migrations and this RFC. No other active RFC registers an API or conflicts with this decision.
 
-## Назначение и цели
+## Purpose and goals
 
-- Описывать каждую API-модель один раз: typed fields, связи, правила и действия находятся в REST-ресурсе, а не распределены по контроллерам и Form Requests.
-- Дать Items, Users, Labels и Comments единый поиск с текстовым запросом, фильтрами, сортировкой, includes, агрегатами и пагинацией.
-- Поддержать создание и обновление через транзакционный `mutate`, мягкое удаление Item/Comment, удаление Label и типизированный action для Items.
-- Разграничить операции по token abilities и policies, включая admin-only управление пользователями и авторские правила комментариев.
-- Получать интерактивную документацию и OpenAPI автоматически из тех же деклараций, исключая дрифт документации.
-- Сохранить доменные решения Item: один тип модели для задач и контейнеров, независимые `type`, `is_epic`, `parent_id`, целостность иерархии.
+- Describe each API model once: typed fields, relations, rules and actions live in the REST resource instead of being spread across controllers and Form Requests.
+- Give Items, Users, Labels and Comments a shared search with a text query, filters, sorting, includes, aggregates and pagination.
+- Support creation and updates through transactional `mutate`, soft delete for Item/Comment, deletion for Label and a typed action for Items.
+- Separate operations by token abilities and policies, including admin-only user management and comment authorship rules.
+- Get interactive documentation and OpenAPI automatically from the same declarations, eliminating documentation drift.
+- Keep the Item domain decisions: one model type for tasks and containers, independent `type`, `is_epic`, `parent_id`, and hierarchy integrity.
 
-Заинтересованные стороны: разработчики AgileTracker и клиентов API, авторы интеграций, владелец продукта и ревьюеры архитектуры. Эти четыре ресурса задают шаблон для следующих REST-ресурсов приложения.
+Stakeholders: AgileTracker and API client developers, integration authors, the product owner and architecture reviewers. These four resources set the template for the following REST resources of the application.
 
-## Составляющие и особенности
+## Components and specifics
 
-### 1. Платформа, общие контракты и безопасность
+### 1. Platform, shared contracts and security
 
-- В `composer.json` повышаем ограничение до `laravel/framework:^13.30`, обновляем lockfile и добавляем production-зависимости `lomkit/laravel-rest-api:^3.0`, `dedoc/scramble:^0.13.48`, `laravel/sanctum`. Scribe не устанавливаем; его пакет, конфиги, routes и generated assets должны отсутствовать.
-- Регистрируем `routes/api.php` через `install:api`, добавляем `HasApiTokens` в `User`, сохраняем JSON-ошибки для `api/*`. Группа `/api/v1` использует `auth:sanctum` и `throttle:api` — 60 запросов в минуту по user ID, для гостя по IP.
-- Создаются базовые `App\Rest\Resources\Resource`, `App\Rest\Controllers\Controller` и четыре тонких контроллера. REST-классы не смешиваются с одноимёнными Filament Resources; `App\Http\Resources` не используется.
+- In `composer.json` we raise the constraint to `laravel/framework:^13.30`, update the lockfile and add the production dependencies `lomkit/laravel-rest-api:^3.0`, `dedoc/scramble:^0.13.48`, `laravel/sanctum`. Scribe is not installed; its package, configs, routes and generated assets must be absent.
+- We register `routes/api.php` through `install:api`, add `HasApiTokens` to `User` and keep JSON errors for `api/*`. The `/api/v1` group uses `auth:sanctum` and `throttle:api` — 60 requests per minute by user ID, and by IP for guests.
+- The base `App\Rest\Resources\Resource`, `App\Rest\Controllers\Controller` and four thin controllers are created. REST classes are not mixed with the identically named Filament Resources; `App\Http\Resources` is not used.
 
-| Ресурс | Базовый URI | Разрешённые пакетные endpoints | Abilities |
+| Resource | Base URI | Allowed package endpoints | Abilities |
 |---|---|---|---|
 | Items | `/api/v1/items` | `details`, `search`, `mutate`, `operate`, `destroy` | `items:read`, `items:write` |
 | Users | `/api/v1/users` | `details`, `search`, `mutate` | `users:read`, `users:write` |
 | Labels | `/api/v1/labels` | `details`, `search`, `mutate`, `destroy` | `labels:read`, `labels:write` |
 | Comments | `/api/v1/comments` | `details`, `search`, `mutate`, `destroy` | `comments:read`, `comments:write` |
 
-- Routes регистрируются через `Rest::resource(...)->only(...)`: неперечисленные endpoints не существуют. Metrics, restore, force delete и традиционные `Route::apiResource()` не публикуются; operate есть только у Items.
-- Read endpoints требуют `<resource>:read`, mutate/operate/destroy — `<resource>:write`. Token ability не заменяет Policy. Без токена — JSON 401, без ability или при отказе Policy — 403, превышение limiter — 429.
-- `GET /{resource}` возвращает details, `POST /{resource}/search` — rows. Традиционных list/show нет: одна запись получается фильтром `id = ...`. Пустой результат — 200 с `data: []`.
-- Каждый ресурс объявляет `Contains::make()` и searchable Text fields. Режимы `words`/`phrase`, максимум 255 символов; `%`, `_`, `\` буквальны. Поддерживаются декларированные filters, selects, sorts, includes, aggregates, gates, page, limit. Scout/FULLTEXT не добавляются.
-- Базовый Resource задаёт `$defaultLimit = 15` и limits `[15,25,50,100]`. Ответ использует page-пагинацию Lomkit; порядок по умолчанию `id DESC`, при пользовательской сортировке пакет добавляет ключ для детерминированности.
-- `POST /{resource}/mutate` выполняет create/update в одной транзакции и возвращает 200 `operations`; опциональный `response` возвращает записи после commit. `DELETE /{resource}` принимает `resources` и возвращает 200 с rows, а не 204.
-- `searching()` в базовом Resource отклоняет `search.trashed` с 422. Soft-deleted Items/Comments исключены из поиска и записи; restore/force delete отсутствуют. Неизвестные поля, relations и операторы дают 422 с точным payload path.
-- `rest:check` обязателен после миграций; в тестах включаются `REST_AUTHORIZATIONS_STRICT=true` и `WithCachedRoutes`.
+- Routes are registered through `Rest::resource(...)->only(...)`: endpoints that are not listed do not exist. Metrics, restore, force delete and the traditional `Route::apiResource()` are not published; operate exists only for Items.
+- Read endpoints require `<resource>:read`; mutate/operate/destroy require `<resource>:write`. A token ability does not replace a Policy. No token gives a JSON 401, a missing ability or a Policy denial gives 403, exceeding the limiter gives 429.
+- `GET /{resource}` returns details, `POST /{resource}/search` returns rows. There is no traditional list/show: a single record is fetched with the `id = ...` filter. An empty result is 200 with `data: []`.
+- Every resource declares `Contains::make()` and searchable Text fields. Modes are `words`/`phrase`, maximum 255 characters; `%`, `_`, `\` are literal. Declared filters, selects, sorts, includes, aggregates, gates, page and limit are supported. Scout/FULLTEXT are not added.
+- The base Resource sets `$defaultLimit = 15` and limits `[15,25,50,100]`. The response uses Lomkit page pagination; the default order is `id DESC`, and with user sorting the package adds a key for determinism.
+- `POST /{resource}/mutate` performs create/update in a single transaction and returns 200 with `operations`; the optional `response` returns the records after commit. `DELETE /{resource}` accepts `resources` and returns 200 with rows rather than 204.
+- `searching()` in the base Resource rejects `search.trashed` with 422. Soft-deleted Items/Comments are excluded from search and writes; restore/force delete are absent. Unknown fields, relations and operators give 422 with the exact payload path.
+- `rest:check` is mandatory after migrations; the tests enable `REST_AUTHORIZATIONS_STRICT=true` and `WithCachedRoutes`.
 
 ### 2. ItemResource
 
-- Новая миграция добавляет `items.is_epic`: non-null boolean, `default(false)`, индекс `(is_epic, id)`; `down()` удаляет индекс и колонку. `Item` получает `$fillable`, boolean cast и activity log для `is_epic`; `ItemFactory` — `false` по умолчанию и state `epic()`.
-- Поля: `id`, `title`, `description`, `type`, `is_epic`, `parent_id`, `assignee_id`, readonly `reporter_id`, `due_date`, readonly timestamps. Произвольный `meta` и недекларированные колонки недоступны.
-- `type` — virtual Text field: читается из `meta.type`, пишется через `fillUsing()` с сохранением остальных meta keys, фильтруется через `meta->type`. Допустимы `task|bug|feature`; create требует значение, update — `filled`. Для старых записей без типа read-схема допускает null.
-- Searchable: `title`, `description`. Filters: `is_epic`, `type`, `assignee_id`, `labels.name` и штатные фильтры остальных разрешённых полей. Children count получается aggregate `children:count`.
-- `parent`, `children`, `assignee`, `reporter`, `comments` — read-only relations. `labels` принимает только `attach`, `detach`, `sync`; создавать или редактировать labels через Item нельзя. Вложенные writes через parent/children запрещены, иерархия меняется только `parent_id`.
-- `ItemPolicy`: `viewAny`, `view`, `create`, `update`, `delete` разрешены аутентифицированным пользователям в текущей доменной модели. Ресурс явно `#[WithoutPerimeter]`; будущие visibility-правила переносятся в `perimeterQuery()`.
-- На create обязательны `title` и `type`; title max 255. `parent_id` и `assignee_id` nullable и ссылаются на существующие записи; parent должен быть неудалённым. `mutating()` заполняет readonly `reporter_id` текущим пользователем.
-- При изменении `parent_id` hook возвращает 422 для ссылки на сам item или потомка и откатывает всю мутацию. Смена `is_epic` не меняет `type`, `parent_id` или children. Eloquent продолжает запускать activity log.
-- `DELETE /items` мягко удаляет записи транзакционно. `destroying()` возвращает 409 при активных children; каскадного удаления/detach нет. Комментарии остаются в БД, но исключаются вместе с удалённым parent через perimeter CommentResource.
-- Единственный начальный action — `AssignItems`, `$uriKey = 'assign'`: `POST /items/actions/assign`. Nullable `assignee_id` с `exists:users,id` назначает или снимает исполнителя.
-- Action использует `ActionTarget::Resources`, `$maxResources = 100`, `authorizeEach() = update`, `ActionTransaction::Whole`; `search` запрещён. Ответ 200 содержит `data.impacted`, ошибка любой строки откатывает весь список. Неизвестный action после `viewAny` — 404.
+- A new migration adds `items.is_epic`: non-null boolean, `default(false)`, index `(is_epic, id)`; `down()` drops the index and the column. `Item` gains `$fillable`, the boolean cast and the activity log for `is_epic`; `ItemFactory` gets `false` by default and an `epic()` state.
+- Fields: `id`, `title`, `description`, `type`, `is_epic`, `parent_id`, `assignee_id`, readonly `reporter_id`, `due_date`, readonly timestamps. Arbitrary `meta` and undeclared columns are not available.
+- `type` is a virtual Text field: read from `meta.type`, written through `fillUsing()` while preserving the other meta keys, filtered through `meta->type`. Allowed values are `task|bug|feature`; create requires a value, update requires `filled`. For older records without a type the read schema allows null.
+- Searchable: `title`, `description`. Filters: `is_epic`, `type`, `assignee_id`, `labels.name` and the native filters of the other allowed fields. The children count comes from the `children:count` aggregate.
+- `parent`, `children`, `assignee`, `reporter`, `comments` are read-only relations. `labels` accepts only `attach`, `detach`, `sync`; labels cannot be created or edited through Item. Nested writes through parent/children are forbidden, and the hierarchy changes only through `parent_id`.
+- `ItemPolicy`: `viewAny`, `view`, `create`, `update`, `delete` are allowed to authenticated users in the current domain model. The resource is explicitly `#[WithoutPerimeter]`; future visibility rules move into `perimeterQuery()`.
+- On create `title` and `type` are required; title max 255. `parent_id` and `assignee_id` are nullable and reference existing records; the parent must not be deleted. `mutating()` fills the readonly `reporter_id` with the current user.
+- When `parent_id` changes, the hook returns 422 for a reference to the item itself or a descendant and rolls back the entire mutation. Changing `is_epic` does not change `type`, `parent_id` or children. Eloquent keeps triggering the activity log.
+- `DELETE /items` soft deletes records transactionally. `destroying()` returns 409 when children are active; there is no cascade delete/detach. Comments stay in the database but are excluded through the CommentResource perimeter together with the deleted parent.
+- The only initial action is `AssignItems`, `$uriKey = 'assign'`: `POST /items/actions/assign`. The nullable `assignee_id` with `exists:users,id` assigns or clears the assignee.
+- The action uses `ActionTarget::Resources`, `$maxResources = 100`, `authorizeEach() = update`, `ActionTransaction::Whole`; `search` is forbidden. A 200 response contains `data.impacted`; an error in any row rolls back the whole list. An unknown action after `viewAny` gives 404.
 
 ### 3. UserResource
 
-- Поля: `id`, `name`, `email`, writeOnly `password`, readonly timestamps. `remember_token`, `email_verified_at`, tokens, password и session data никогда не возвращаются; password нельзя фильтровать или сортировать.
-- Searchable: `name`, `email`; filters включают `name`, `email`, `id`. Read-only relations: `assignedItems`, `reportedItems`, `comments`. Роли и permissions в API v1 не экспонируются.
-- Create требует `name`, уникальный `email`, `password` минимум 12 символов; hashed cast модели выполняет хеширование. Update разрешает name/email и необязательный password; unique email игнорирует текущую запись через `Contextual::rule()`.
-- `UserPolicy`: `viewAny`/`view` разрешены аутентифицированным пользователям, `create`/`update` — только роли `admin`. Поэтому `users:write` необходим, но недостаточен без admin. Ресурс `#[WithoutPerimeter]`.
-- `DELETE /users` не регистрируется: удаление пользователей, перенос их items/comments и отзыв tokens требуют отдельного lifecycle-решения. Назначение ролей также не входит в этот RFC.
+- Fields: `id`, `name`, `email`, writeOnly `password`, readonly timestamps. `remember_token`, `email_verified_at`, tokens, password and session data are never returned; password cannot be filtered or sorted.
+- Searchable: `name`, `email`; filters include `name`, `email`, `id`. Read-only relations: `assignedItems`, `reportedItems`, `comments`. Roles and permissions are not exposed in API v1.
+- Create requires `name`, a unique `email` and a `password` of at least 12 characters; the model's hashed cast performs the hashing. Update allows name/email and an optional password; the unique email rule ignores the current record via `Contextual::rule()`.
+- `UserPolicy`: `viewAny`/`view` are allowed to authenticated users, `create`/`update` only to the `admin` role. So `users:write` is necessary but not sufficient without admin. The resource is `#[WithoutPerimeter]`.
+- `DELETE /users` is not registered: deleting users, moving their items/comments and revoking tokens require a separate lifecycle decision. Role assignment is also outside this RFC.
 
 ### 4. LabelResource
 
-- Поля: `id`, `name`, `color`, readonly timestamps; searchable `name`; read-only relation `items`. Ресурс `#[WithoutPerimeter]`.
-- Create требует `name` max 50. `color` необязателен на create из-за DB default, а при передаче проверяется формат `#RRGGBB`; update использует `filled` для обоих полей.
-- `LabelPolicy` разрешает read/write аутентифицированным пользователям. `DELETE /labels` удаляет label; существующий `item_label` cascade удаляет только связи, сами items не изменяются.
-- Обратная relation `items` read-only: изменение состава labels выполняется только через `ItemResource.labels`, что исключает два конкурирующих write API.
+- Fields: `id`, `name`, `color`, readonly timestamps; searchable `name`; read-only relation `items`. The resource is `#[WithoutPerimeter]`.
+- Create requires `name` max 50. `color` is optional on create because of the DB default, and when supplied its `#RRGGBB` format is validated; update uses `filled` for both fields.
+- `LabelPolicy` allows read/write to authenticated users. `DELETE /labels` deletes the label; the existing `item_label` cascade removes only the links, the items themselves are not changed.
+- The reverse `items` relation is read-only: label membership is changed only through `ItemResource.labels`, which rules out two competing write APIs.
 
 ### 5. CommentResource
 
-- Поля: `id`, `body`, create-only `item_id`, readonly `user_id`, readonly timestamps. Searchable `body`; filters включают `item_id`, `user_id`, `id`; read-only relations `item`, `author`.
-- Create требует `body` и существующий неудалённый `item_id`. `mutating()` заполняет `user_id` текущим пользователем; клиент не может подменить автора. Update разрешает только `body` с `filled`; item и автор неизменны.
-- `CommentPolicy`: `viewAny`/`view` разрешены аутентифицированным пользователям, `create` — при доступном parent Item, `update`/`delete` — автору комментария или `admin`. `comments:write` обязателен для всех writes.
-- `perimeterQuery()` ограничивает выдачу `whereHas('item')`: комментарии soft-deleted Item не возвращаются, не изменяются и не удаляются через API. Они остаются в БД для возможного будущего restore родителя.
-- `DELETE /comments` выполняет soft delete в одной транзакции. `search.trashed`, restore и force delete запрещены общим контрактом.
+- Fields: `id`, `body`, create-only `item_id`, readonly `user_id`, readonly timestamps. Searchable `body`; filters include `item_id`, `user_id`, `id`; read-only relations `item`, `author`.
+- Create requires `body` and an existing, non-deleted `item_id`. `mutating()` fills `user_id` with the current user; the client cannot spoof the author. Update allows only `body` with `filled`; the item and author are immutable.
+- `CommentPolicy`: `viewAny`/`view` are allowed to authenticated users, `create` when the parent Item is available, `update`/`delete` to the comment author or `admin`. `comments:write` is mandatory for all writes.
+- `perimeterQuery()` limits the output with `whereHas('item')`: comments of a soft-deleted Item are not returned, changed or deleted through the API. They stay in the database in case the parent is restored in the future.
+- `DELETE /comments` performs a soft delete in a single transaction. `search.trashed`, restore and force delete are forbidden by the shared contract.
 
-### 6. Автоматическая OpenAPI-документация и проверка контракта
+### 6. Automatic OpenAPI documentation and contract checking
 
-Scramble выбран потому, что это единственный штатный способ Lomkit 3 автоматически строить OpenAPI из деклараций REST-ресурсов. Собственный генератор документации удалён из Lomkit 3, а поставляемые трансформеры Scramble используют те же fields, relations, filters, actions, limits и gates, что и работающий API. Это исключает параллельное описание контракта и соответствует исходной цели автодокументации.
+Scramble was chosen because it is the only native way for Lomkit 3 to build OpenAPI automatically from REST resource declarations. Lomkit 3 removed its own documentation generator, and the Scramble transformers it ships use the same fields, relations, filters, actions, limits and gates as the working API. That rules out a parallel description of the contract and matches the original goal of auto-documentation.
 
-Scribe не является технически несовместимым с Lomkit, но готовой интеграции с Lomkit Resource у него нет. Scribe умеет извлекать ответы из Laravel API Resources (`JsonResource`), а не из деклараций `App\Rest\Resources\Resource`; схемы search/mutate, relations, filters и actions пришлось бы дублировать аннотациями либо поддерживать собственный адаптер. Поэтому Scribe не удовлетворяет требованию единого источника контракта без дополнительной разработки.
+Scribe is not technically incompatible with Lomkit, but it has no ready-made integration with Lomkit Resource. Scribe can extract responses from Laravel API Resources (`JsonResource`), not from `App\Rest\Resources\Resource` declarations; the search/mutate schemas, relations, filters and actions would have to be duplicated with annotations or a custom adapter would have to be maintained. Scribe therefore does not satisfy the single-source-of-contract requirement without additional development.
 
-- Scramble — production-зависимость: интерактивная документация доступна на `/docs/api`, ручная регистрация операций Lomkit не требуется.
-- Document transformer добавляет HTTP Bearer security scheme. Схемы автоматически покрывают все четыре ресурса, их details/search/mutate, разрешённые destroy, `assign`, typed fields, filters, relations, limits, validation и пакетные ошибки. Доменные 409 Item delete/hierarchy дополняются небольшим operation transformer.
-- `examples()` задаются полям и action inputs. Password схематично обозначен writeOnly; запрещённые relations и endpoints не попадают в документацию.
-- `php artisan scramble:export --path=tests/api.json` создаёт OpenAPI 3.1.0 snapshot. Файл коммитится; CI повторно экспортирует спецификацию и падает на diff. Scribe HTML и отдельная Postman-коллекция не нужны: OpenAPI можно импортировать в Postman.
-- Feature-тесты выполняют реальные HTTP-запросы для каждого ресурса, связей, policies, abilities и транзакций, сверяя ответы со схемами. Snapshot-тест проверяет paths, component schemas и bearer security.
-- Готовность подтверждается `php artisan rest:check`, полным `php artisan test`, `./vendor/bin/pint` и повторным экспортом без изменений.
+- Scramble is a production dependency: the interactive documentation is available at `/docs/api`, and no manual registration of Lomkit operations is required.
+- A document transformer adds the HTTP Bearer security scheme. The schemas automatically cover all four resources, their details/search/mutate, the allowed destroy, `assign`, typed fields, filters, relations, limits, validation and package errors. The domain 409 for Item delete/hierarchy is added by a small operation transformer.
+- `examples()` are set on fields and action inputs. The password is marked writeOnly schematically; forbidden relations and endpoints do not appear in the documentation.
+- `php artisan scramble:export --path=tests/api.json` creates the OpenAPI 3.1.0 snapshot. The file is committed; CI re-exports the specification and fails on a diff. Scribe HTML and a separate Postman collection are not needed: OpenAPI can be imported into Postman.
+- Feature tests make real HTTP requests for every resource, relation, policy, ability and transaction, checking responses against the schemas. A snapshot test verifies paths, component schemas and bearer security.
+- Readiness is confirmed by `php artisan rest:check`, the full `php artisan test`, `./vendor/bin/pint` and a re-export with no changes.
 
-### Ограничения и out of scope
+### Limitations and out of scope
 
-- Метрики, queued/batched actions, restore/force delete, чтение trashed, вложенное создание дерева Items.
-- Отдельные Project/Epic-модели и маршруты; REST Resources для Favorites и других моделей сверх четырёх перечисленных.
-- Удаление Users, назначение ролей/permissions, управление tokens через API, email verification flow.
-- Традиционные list/show/store/update endpoints и совместимость с форматами предыдущего варианта RFC.
-- Laravel Scout, Meilisearch, FULLTEXT; OAuth2, webhooks, публичные SDK.
+- Metrics, queued/batched actions, restore/force delete, reading trashed records, nested creation of the Items tree.
+- Separate Project/Epic models and routes; REST Resources for Favorites and other models beyond the four listed.
+- Deleting Users, assigning roles/permissions, managing tokens through the API, the email verification flow.
+- Traditional list/show/store/update endpoints and compatibility with the formats of the previous RFC variant.
+- Laravel Scout, Meilisearch, FULLTEXT; OAuth2, webhooks, public SDKs.
 
-## Критерии приемки (checklist)
+## Acceptance criteria (checklist)
 
-### 1. Платформа, общие контракты и безопасность
+### 1. Platform, shared contracts and security
 
-- [x] Зависимости соответствуют Laravel `^13.30+`, Lomkit 3.x, Scramble `^0.13.48`, Sanctum; Scribe отсутствует в lockfile, конфигах, routes и assets.
-- [x] `route:list` содержит ровно endpoints из таблицы для items/users/labels/comments; metrics, restore, force, users destroy и actions вне Items отсутствуют.
-- [x] Общие search/mutate/delete форматы, Contains, limits, pagination, запрет trashed и JSON 401/403/422/429 подтверждены тестами; `rest:check` зелёный.
+- [x] The dependencies match Laravel `^13.30+`, Lomkit 3.x, Scramble `^0.13.48`, Sanctum; Scribe is absent from the lockfile, configs, routes and assets.
+- [x] `route:list` contains exactly the endpoints from the table for items/users/labels/comments; metrics, restore, force, users destroy and actions outside Items are absent.
+- [x] The shared search/mutate/delete formats, Contains, limits, pagination, the trashed ban and JSON 401/403/422/429 are covered by tests; `rest:check` is green.
 
 ### 2. ItemResource
 
-- [x] Миграция `is_epic` обратно совместима и откатывается; hybrid `type=task + is_epic=true` доступен через тот же ресурс, type сохраняется в `meta.type` без потери других keys.
-- [x] Search работает по title/description и filters; relations и children count не вызывают N+1; недекларированные поля/meta и вложенные parent/children writes дают 422.
-- [x] Create/update заполняют reporter текущим пользователем, валидируют поля и labels, запрещают циклы parent_id с откатом всей мутации; `is_epic` не меняет иерархию.
-- [x] Delete leaf Item мягкий и возвращает 200; активные children дают 409 без изменений. Assign меняет/очищает assignee максимум для 100 явных ID, проверяет update и атомарно возвращает `impacted`.
+- [x] The `is_epic` migration is backward compatible and rolls back; the hybrid `type=task + is_epic=true` is available through the same resource, and type is stored in `meta.type` without losing other keys.
+- [x] Search works over title/description and filters; relations and the children count do not cause N+1; undeclared fields/meta and nested parent/children writes give 422.
+- [x] Create/update fill the reporter with the current user, validate fields and labels, forbid `parent_id` cycles with a full mutation rollback; `is_epic` does not change the hierarchy.
+- [x] Deleting a leaf Item is soft and returns 200; active children give 409 with no changes. Assign sets/clears the assignee for at most 100 explicit IDs, checks update and atomically returns `impacted`.
 
 ### 3. UserResource
 
-- [x] Users search/details работают с `users:read`; create/update требуют и `users:write`, и admin. Обычный пользователь с write ability получает 403.
-- [x] Email уникален с корректным ignore при update, password обязателен на create и хешируется; password/tokens/remember_token невозможно прочитать, отфильтровать или вернуть через selects.
-- [x] `DELETE /users` и role assignment routes/relations отсутствуют; assignedItems/reportedItems/comments доступны только как read-only includes.
+- [x] Users search/details work with `users:read`; create/update require both `users:write` and admin. A regular user with the write ability gets 403.
+- [x] Email is unique with a correct ignore on update, password is required on create and hashed; password/tokens/remember_token cannot be read, filtered or returned through selects.
+- [x] `DELETE /users` and role assignment routes/relations are absent; assignedItems/reportedItems/comments are available only as read-only includes.
 
 ### 4. LabelResource
 
-- [x] Labels поддерживают details/search/mutate/delete с соответствующими abilities; name/color валидируются, read-only items include работает.
-- [x] Удаление Label очищает только `item_label` связи и не удаляет Items; состав labels изменяется только через ItemResource.
+- [x] Labels support details/search/mutate/delete with the matching abilities; name/color are validated and the read-only items include works.
+- [x] Deleting a Label clears only the `item_label` links and does not delete Items; label membership changes only through ItemResource.
 
 ### 5. CommentResource
 
-- [x] Create требует body/item_id и заполняет автором текущего пользователя; update меняет только body и разрешён автору или admin; чужой пользователь без admin получает 403.
-- [x] Search фильтрует по item/user и включает item/author; comments удалённого Item исключены из search/mutate/delete.
-- [x] Delete автора/admin выполняет soft delete с 200; `comments:write` и Policy проверяются независимо, trashed/restore/force отсутствуют.
+- [x] Create requires body/item_id and fills the author with the current user; update changes only body and is allowed to the author or admin; another user without admin gets 403.
+- [x] Search filters by item/user and includes item/author; comments of a deleted Item are excluded from search/mutate/delete.
+- [x] Delete by the author/admin performs a soft delete with 200; `comments:write` and the Policy are checked independently, trashed/restore/force are absent.
 
-### 6. Автоматическая OpenAPI-документация и проверка контракта
+### 6. Automatic OpenAPI documentation and contract checking
 
-- [x] `/docs/api` содержит все разрешённые операции четырёх ресурсов и `assign`, bearer auth, схемы полей/relations/actions и ошибки; запрещённые endpoints отсутствуют.
-- [x] `php artisan scramble:export --path=tests/api.json` создаёт OpenAPI 3.1.0; повторный экспорт не создаёт diff, а изменение ресурса без snapshot ломает CI.
-- [x] `php artisan test` зелёный, включая все resource/authorization/docs tests и strict authorization; `./vendor/bin/pint` не производит изменений.
+- [x] `/docs/api` contains every allowed operation of the four resources plus `assign`, bearer auth, field/relation/action schemas and errors; forbidden endpoints are absent.
+- [x] `php artisan scramble:export --path=tests/api.json` creates OpenAPI 3.1.0; a repeated export produces no diff, and changing a resource without a snapshot breaks CI.
+- [x] `php artisan test` is green, including all resource/authorization/docs tests and strict authorization; `./vendor/bin/pint` produces no changes.
 
-## Дорожная карта
+## Roadmap
 
-1. **Платформа, общие контракты и безопасность.** Обновить Laravel, установить пакеты, создать базовые классы, routes, abilities, limiter и общие search/mutate правила.
-2. **ItemResource.** Добавить `is_epic`, поля/relations, hooks, delete guard, `AssignItems` и тесты доменных инвариантов.
-3. **UserResource.** Реализовать безопасные поля, admin policies и user mutations без удаления и ролей.
-4. **LabelResource.** Реализовать CRUD, read-only items relation и проверку pivot cascade.
-5. **CommentResource.** Реализовать авторство, author/admin policies, parent perimeter и soft delete; связать с Item/User includes.
-6. **Автоматическая OpenAPI-документация и проверка контракта.** Настроить bearer/examples, snapshot, contract tests и CI-проверки всех ресурсов.
+1. **Platform, shared contracts and security.** Upgrade Laravel, install the packages, create the base classes, routes, abilities, limiter and shared search/mutate rules.
+2. **ItemResource.** Add `is_epic`, fields/relations, hooks, the delete guard, `AssignItems` and the domain invariant tests.
+3. **UserResource.** Implement the safe fields, admin policies and user mutations without deletion and roles.
+4. **LabelResource.** Implement CRUD, the read-only items relation and the pivot cascade check.
+5. **CommentResource.** Implement authorship, author/admin policies, the parent perimeter and soft delete; wire it to the Item/User includes.
+6. **Automatic OpenAPI documentation and contract checking.** Configure bearer/examples, the snapshot, contract tests and CI checks for all resources.
 
-## Итого и рекомендации
+## Summary and recommendations
 
-Реализуем API v1 сразу на Lomkit Rest API 3 и Scramble для Items, Users, Labels и Comments, не создавая ручной CRUD, Scribe и метрики. Каждый REST-ресурс становится единственным источником контракта своей модели, а общие базовые классы фиксируют одинаковые поиск, мутации, авторизацию и документацию. Различия остаются только в полях, relations и доменных policies.
+We implement API v1 directly on Lomkit Rest API 3 and Scramble for Items, Users, Labels and Comments, without building manual CRUD, Scribe or metrics. Each REST resource becomes the single source of the contract for its model, and the shared base classes pin the same search, mutations, authorization and documentation. Differences remain only in fields, relations and domain policies.
 
-## Тест инструкции
+## Test instructions
 
-Каждый шаг ниже проверяется на чистом окружении после `composer install`, `php artisan migrate` и `npm run build`.
+Every step below is verified in a clean environment after `composer install`, `php artisan migrate` and `npm run build`.
 
-### 1. Автотесты
+### 1. Automated tests
 
-- [tests/Feature/Api/ApiFoundationTest.php](../../../tests/Feature/Api/ApiFoundationTest.php) — состав маршрутов, 401/403/429, общие форматы search/mutate/delete, пагинация, запрет trashed и `rest:check`.
-- [tests/Feature/Api/ItemApiTest.php](../../../tests/Feature/Api/ItemApiTest.php) — поиск, фильтры, includes/aggregates, `is_epic`, `meta.type`, циклы `parent_id`, удаление листа и 409, действие `assign`.
-- [tests/Feature/Api/UserApiTest.php](../../../tests/Feature/Api/UserApiTest.php) — безопасные поля, admin-only create/update, уникальность email, хеширование пароля.
-- [tests/Feature/Api/LabelApiTest.php](../../../tests/Feature/Api/LabelApiTest.php) — CRUD метки, формат цвета, удаление только связей `item_label`.
-- [tests/Feature/Api/CommentApiTest.php](../../../tests/Feature/Api/CommentApiTest.php) — авторство, автор/admin, perimeter удалённого Item, soft delete.
-- [tests/Feature/Api/ApiDocumentationTest.php](../../../tests/Feature/Api/ApiDocumentationTest.php) — OpenAPI 3.1, bearer, отсутствие запрещённых путей, актуальность снапшота.
-- Запуск: `php artisan test --compact tests/Feature/Api`.
+- [tests/Feature/Api/ApiFoundationTest.php](../../../tests/Feature/Api/ApiFoundationTest.php) — route inventory, 401/403/429, the shared search/mutate/delete formats, pagination, the trashed ban and `rest:check`.
+- [tests/Feature/Api/ItemApiTest.php](../../../tests/Feature/Api/ItemApiTest.php) — search, filters, includes/aggregates, `is_epic`, `meta.type`, `parent_id` cycles, leaf deletion and 409, the `assign` action.
+- [tests/Feature/Api/UserApiTest.php](../../../tests/Feature/Api/UserApiTest.php) — safe fields, admin-only create/update, email uniqueness, password hashing.
+- [tests/Feature/Api/LabelApiTest.php](../../../tests/Feature/Api/LabelApiTest.php) — label CRUD, color format, deleting only `item_label` links.
+- [tests/Feature/Api/CommentApiTest.php](../../../tests/Feature/Api/CommentApiTest.php) — authorship, author/admin, deleted Item perimeter, soft delete.
+- [tests/Feature/Api/ApiDocumentationTest.php](../../../tests/Feature/Api/ApiDocumentationTest.php) — OpenAPI 3.1, bearer, absence of forbidden paths, snapshot freshness.
+- Run: `php artisan test --compact tests/Feature/Api`.
 
-### 2. Контракт и документация
+### 2. Contract and documentation
 
-- `php artisan rest:check` — маршруты аутентифицированы, у четырёх моделей есть политики, action проверяет каждую строку, ресурсы размечены `#[WithoutPerimeter]`.
-- `php artisan scramble:export --path=tests/api.json` — повторный экспорт не должен менять [tests/api.json](../../../tests/api.json); расхождение ломает `php artisan test`.
-- [/docs/api](http://localhost:8000/docs/api) — интерактивная документация со всеми операциями, bearer-схемой и примерами; страница доступна в `local`/`testing`, политика доступа для production остаётся открытым вопросом.
-- [routes/api.php](../../../routes/api.php) — группа `/api/v1` с `auth:sanctum` и `throttle:api`.
+- `php artisan rest:check` — routes are authenticated, the four models have policies, the action checks every row, the resources are marked `#[WithoutPerimeter]`.
+- `php artisan scramble:export --path=tests/api.json` — a repeated export must not change [tests/api.json](../../../tests/api.json); any difference breaks `php artisan test`.
+- [/docs/api](http://localhost:8000/docs/api) — interactive documentation with all operations, the bearer scheme and examples; the page is available in `local`/`testing`, and the production access policy remains an open question.
+- [routes/api.php](../../../routes/api.php) — the `/api/v1` group with `auth:sanctum` and `throttle:api`.
 
 ### 3. Items
 
-- `GET /api/v1/items` — details: поля, лимиты `[15,25,50,100]`, relations.
-- `POST /api/v1/items/search` — текст по `title`/`description`, фильтры `is_epic`, `type`, `assignee_id`, `labels.name`, includes `labels`/`comments`/`children`, aggregate `children:count`.
-- `POST /api/v1/items/mutate` — create заполняет `reporter_id`, пишет `meta.type`, синхронизирует `labels`; update с `parent_id` на себя или потомка даёт 422 и откатывает всю мутацию.
-- `DELETE /api/v1/items` — лист удаляется мягко (200), Item с активными children даёт 409.
-- `POST /api/v1/items/actions/assign` — `{"resources":[...], "fields":[{"name":"assignee_id","value":3}]}`, не более 100 ID, атомарно.
+- `GET /api/v1/items` — details: fields, limits `[15,25,50,100]`, relations.
+- `POST /api/v1/items/search` — text over `title`/`description`, filters `is_epic`, `type`, `assignee_id`, `labels.name`, includes `labels`/`comments`/`children`, aggregate `children:count`.
+- `POST /api/v1/items/mutate` — create fills `reporter_id`, writes `meta.type`, syncs `labels`; update with `parent_id` pointing at itself or a descendant gives 422 and rolls back the whole mutation.
+- `DELETE /api/v1/items` — a leaf is soft deleted (200), an Item with active children gives 409.
+- `POST /api/v1/items/actions/assign` — `{"resources":[...], "fields":[{"name":"assignee_id","value":3}]}`, at most 100 IDs, atomic.
 - [app/Rest/Resources/ItemResource.php](../../../app/Rest/Resources/ItemResource.php), [app/Rest/Actions/AssignItems.php](../../../app/Rest/Actions/AssignItems.php), [app/Policies/ItemPolicy.php](../../../app/Policies/ItemPolicy.php).
 
 ### 4. Users
 
-- `POST /api/v1/users/search` — `name`/`email` поиск и фильтры; `password`, `remember_token`, `email_verified_at` не возвращаются, не фильтруются и не сортируются.
-- `POST /api/v1/users/mutate` — create/update только с ролью `admin` и ability `users:write`; обычный пользователь получает 403; email уникален с игнором текущей записи; пароль ≥ 12 символов и хешируется.
+- `POST /api/v1/users/search` — `name`/`email` search and filters; `password`, `remember_token`, `email_verified_at` are never returned, filtered or sorted.
+- `POST /api/v1/users/mutate` — create/update only with the `admin` role and the `users:write` ability; a regular user gets 403; email is unique with the current record ignored; the password is ≥ 12 characters and hashed.
 - [app/Rest/Resources/UserResource.php](../../../app/Rest/Resources/UserResource.php), [app/Policies/UserPolicy.php](../../../app/Policies/UserPolicy.php).
 
 ### 5. Labels
 
-- `POST /api/v1/labels/mutate` — имя обязательно (≤ 50), цвет `#RRGGBB` по умолчанию `#6366f1`.
-- `DELETE /api/v1/labels` — удаляет метку и только строки `item_label`; Items остаются.
+- `POST /api/v1/labels/mutate` — the name is required (≤ 50), the `#RRGGBB` color defaults to `#6366f1`.
+- `DELETE /api/v1/labels` — deletes the label and only the `item_label` rows; Items remain.
 - [app/Rest/Resources/LabelResource.php](../../../app/Rest/Resources/LabelResource.php), [app/Policies/LabelPolicy.php](../../../app/Policies/LabelPolicy.php).
 
 ### 6. Comments
 
-- `POST /api/v1/comments/mutate` — `user_id` заполняется текущим пользователем, `item_id` обязателен и указывает на неудалённый Item.
-- update меняет только `body`; чужой пользователь без роли `admin` получает 403; delete автора/admin делает soft delete.
-- Комментарии soft-deleted Item не видны в search, не изменяются и не удаляются через API.
+- `POST /api/v1/comments/mutate` — `user_id` is filled with the current user, `item_id` is required and points at a non-deleted Item.
+- update changes only `body`; another user without the `admin` role gets 403; delete by the author/admin performs a soft delete.
+- Comments of a soft-deleted Item are not visible in search, are not changed and are not deleted through the API.
 - [app/Rest/Resources/CommentResource.php](../../../app/Rest/Resources/CommentResource.php), [app/Policies/CommentPolicy.php](../../../app/Policies/CommentPolicy.php).
 
-### 7. Ручная проверка токена и лимитера
+### 7. Manual token and limiter check
 
-- Выпуск токена: `php artisan tinker --execute '$u = App\Models\User::first(); echo $u->createToken("api", ["items:read","items:write"])->plainTextToken;'`.
-- Запрос: `curl -H "Authorization: Bearer <token>" -H "Accept: application/json" http://localhost:8000/api/v1/items`.
-- 61-й запрос за минуту возвращает 429; запрос без токена — JSON 401; токен без нужной ability — 403.
+- Issue a token: `php artisan tinker --execute '$u = App\Models\User::first(); echo $u->createToken("api", ["items:read","items:write"])->plainTextToken;'`.
+- Request: `curl -H "Authorization: Bearer <token>" -H "Accept: application/json" http://localhost:8000/api/v1/items`.
+- The 61st request within a minute returns 429; a request without a token gives a JSON 401; a token without the required ability gives 403.
 
 
-## Дополнения
+## Addenda
 
-### Пример поиска `POST /api/v1/items/search`
+### Search example `POST /api/v1/items/search`
 
 ```json
 {
   "search": {
-    "text": {"value": "биллинг", "mode": "words"},
+    "text": {"value": "billing", "mode": "words"},
     "filters": [
       {"field": "is_epic", "operator": "=", "value": true},
       {"field": "type", "operator": "=", "value": "task"}
@@ -246,7 +246,7 @@ Scribe не является технически несовместимым с 
 }
 ```
 
-### Пример создания `POST /api/v1/items/mutate`
+### Create example `POST /api/v1/items/mutate`
 
 ```json
 {
@@ -254,8 +254,8 @@ Scribe не является технически несовместимым с 
     {
       "operation": "create",
       "attributes": {
-        "title": "Развитие биллинга",
-        "description": "Проект по развитию биллинга",
+        "title": "Billing revamp",
+        "description": "Project to revamp the billing system",
         "type": "task",
         "is_epic": true,
         "parent_id": null,
@@ -278,7 +278,7 @@ Scribe не является технически несовместимым с 
 }
 ```
 
-### Пример действия `POST /api/v1/items/actions/assign`
+### Action example `POST /api/v1/items/actions/assign`
 
 ```json
 {
@@ -287,42 +287,42 @@ Scribe не является технически несовместимым с 
 }
 ```
 
-Ответ: `200` с `{"data":{"impacted":3,"result":null}}`, если все три записи прошли проверки и были обработаны.
+Response: `200` with `{"data":{"impacted":3,"result":null}}` if all three records passed the checks and were processed.
 
-### Пример создания комментария `POST /api/v1/comments/mutate`
+### Comment create example `POST /api/v1/comments/mutate`
 
 ```json
 {
   "mutate": [
     {
       "operation": "create",
-      "attributes": {"item_id": 7, "body": "Уточнить состав первого релиза"}
+      "attributes": {"item_id": 7, "body": "Confirm the scope of the first release"}
     }
   ]
 }
 ```
 
-`user_id` в запросе отсутствует: автором становится текущий пользователь.
+`user_id` is absent from the request: the current user becomes the author.
 
-### Альтернативные варианты
+### Alternatives
 
-**Собственные контроллеры + Laravel API Resources + Scribe.** Даёт привычные CRUD-маршруты, но дублирует fields/rules/relations четырёх моделей и требует ручной поддержки документации. Отклонён до реализации.
+**Custom controllers + Laravel API Resources + Scribe.** Gives the familiar CRUD routes, but duplicates the fields/rules/relations of four models and requires manual documentation maintenance. Rejected before implementation.
 
-**Два ресурса вместо четырёх.** Items + Users закрывают базовый сценарий, но Labels и Comments остаются без единого API, а Item relations приходится скрывать или сериализовать особым способом. Поэтому выбраны четыре уже связанные модели без добавления новых доменных сущностей.
+**Two resources instead of four.** Items + Users cover the basic scenario, but Labels and Comments are left without a unified API, and Item relations have to be hidden or serialized in a special way. That is why four already-related models were chosen, without adding new domain entities.
 
-**Lomkit + Scramble — рекомендуется.** Typed declarations управляют поиском, записями, действием, валидацией, policies и OpenAPI. Компромисс — собственный формат пакета: search/mutate используют POST JSON, page-пагинацию и нестандартные CRUD-ответы; это принимается как публичный контракт v1.
+**Lomkit + Scramble — recommended.** Typed declarations drive search, records, the action, validation, policies and OpenAPI. The trade-off is the package's own format: search/mutate use POST JSON, page pagination and non-standard CRUD responses; this is accepted as the public v1 contract.
 
-### Открытые вопросы
+### Open questions
 
-- Перед production-релизом определить политику доступа к UI `/docs/api`: публичный просмотр или ограничение через стандартные middleware/gate Scramble. На генерацию и API-контракт это не влияет.
-- Отдельным RFC определить удаление пользователей, назначение ролей и restore Items/Comments: эти операции меняют lifecycle связанных записей и не должны появиться как побочный эффект текущей реализации.
-- При росте данных оценить переход с `Contains` на `FullText`/Scout и необходимые индексы.
+- Before the production release, define the access policy for the `/docs/api` UI: public viewing or restriction through Scramble's standard middleware/gate. This does not affect generation or the API contract.
+- A separate RFC should define user deletion, role assignment and restore for Items/Comments: these operations change the lifecycle of related records and must not appear as a side effect of the current implementation.
+- As data grows, evaluate moving from `Contains` to `FullText`/Scout and the required indexes.
 
-### Источники
+### Sources
 
 - Lomkit introduction: https://laravel-rest-api.lomkit.com/getting-started/introduction
-- Installation и требования: https://laravel-rest-api.lomkit.com/getting-started/installation
-- Resources и routes: https://laravel-rest-api.lomkit.com/resources/basics
+- Installation and requirements: https://laravel-rest-api.lomkit.com/getting-started/installation
+- Resources and routes: https://laravel-rest-api.lomkit.com/resources/basics
 - Search: https://laravel-rest-api.lomkit.com/endpoints/search
 - Text search: https://laravel-rest-api.lomkit.com/search/text-search
 - Mutate: https://laravel-rest-api.lomkit.com/writing/mutate
@@ -331,11 +331,11 @@ Scribe не является технически несовместимым с 
 - Relations: https://laravel-rest-api.lomkit.com/resources/relations
 - Events and hooks: https://laravel-rest-api.lomkit.com/digging-deeper/events-and-hooks
 - OpenAPI: https://laravel-rest-api.lomkit.com/digging-deeper/openapi
-- Удаление собственного генератора документации в Lomkit 3: https://github.com/Lomkit/laravel-rest-api/blob/v3.4.0/UPGRADE.md#built-in-documentation-generator-removed
+- Removal of the built-in documentation generator in Lomkit 3: https://github.com/Lomkit/laravel-rest-api/blob/v3.4.0/UPGRADE.md#built-in-documentation-generator-removed
 - Scramble export: https://scramble.dedoc.co/usage/export
-- Scribe API Resources и response calls: https://scribe.knuckles.wtf/laravel/documenting/responses
+- Scribe API Resources and response calls: https://scribe.knuckles.wtf/laravel/documenting/responses
 
-## Заметки
+## Notes
 
 replace api package to https://laravel-rest-api.lomkit.com/
 
@@ -343,16 +343,16 @@ https://laravel-rest-api.lomkit.com/getting-started/introduction
 
 https://laravel-rest-api.lomkit.com/getting-started/installation
 
-цели
-- единый подход к rest api и моделям и ресурсам
-- поиск, экшены и https://laravel-rest-api.lomkit.com/writing/mutate
+goals
+- a single approach to rest api, models and resources
+- search, actions and https://laravel-rest-api.lomkit.com/writing/mutate
 
-а и авто документацию хочется - чтобы итоговый апи имел авто доки
+and we want auto documentation too — so the resulting api has auto docs
 
-проверим что Scribe не должно быть - если он есть - удаляем
+let us check that Scribe is absent — if it is there, remove it
 
-и для Метрик - тоже надо собрать свой неймспейс и такие же роуты - типа добавление метрик, чтение и т д
+and for Metrics we also need to put together our own namespace and the same kind of routes — like adding metrics, reading them, etc.
 
-каждая метрика должна иметь ключ и лейбл
+each metric must have a key and a label
 
-бля я перепутал - тут нет же метрик никаких - потому не надо их - давай что то другое - например items & users - ну или что то еще - чтобы было 2-3-4 ресурса для управления через rest api
+my mistake — there are no metrics here at all, so we don't need them; let's pick something else — for example items & users, or whatever gives 2-3-4 resources to manage through the rest api

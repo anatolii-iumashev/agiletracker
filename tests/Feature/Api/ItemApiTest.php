@@ -93,8 +93,8 @@ test('create fills the reporter, keeps meta keys and syncs labels', function () 
         'mutate' => [[
             'operation' => 'create',
             'attributes' => [
-                'title' => 'Развитие биллинга',
-                'description' => 'Проект по развитию биллинга',
+                'title' => 'Billing revamp',
+                'description' => 'Project to revamp the billing system',
                 'type' => 'task',
                 'is_epic' => true,
                 'due_date' => '2026-11-20',
@@ -108,7 +108,7 @@ test('create fills the reporter, keeps meta keys and syncs labels', function () 
 
     $item = Item::firstOrFail();
 
-    expect($item->title)->toBe('Развитие биллинга')
+    expect($item->title)->toBe('Billing revamp')
         ->and($item->is_epic)->toBeTrue()
         ->and($item->meta)->toBe(['type' => 'task'])
         ->and($item->reporter_id)->toBe($user->getKey())

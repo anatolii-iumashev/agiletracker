@@ -51,11 +51,11 @@ class ItemResource extends Resource
                 ->searchable()
                 ->rules('max:255')
                 ->creationRules('required')
-                ->examples('Развитие биллинга'),
+                ->examples('Billing revamp'),
             Text::make('description')
                 ->nullable()
                 ->searchable()
-                ->examples('Проект по развитию биллинга'),
+                ->examples('Project to revamp the billing system'),
             Text::make('type')
                 ->virtual()
                 ->nullable()

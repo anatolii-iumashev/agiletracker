@@ -1,9 +1,9 @@
 # RFC: Boards - Kanban for AgileTracker
 
 - [ ] MVP
-    - добавить идею что boards - это модель - можно делать разные доски и разные задачи связывать с разными досками - можно 1 задачу на несколько досок набросить 
-    - у каждой доски свои статусы, колонки и задачи на разны досках могут иметь разные статусы
-    - замена для http://localhost:8000/kanban-board
+    - add the idea that boards are a model - you can have different boards and link different tasks to different boards - one task can be put on several boards
+    - each board has its own statuses and columns, and tasks on different boards can have different statuses
+    - replacement for http://localhost:8000/kanban-board
 
 ## TL;DR
 

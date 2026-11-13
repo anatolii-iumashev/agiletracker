@@ -15,8 +15,8 @@
   - [ ] Sub issues (parent_id in Item)
 - [ ] f [http://agiletracker.localhost/favorite](http://agiletracker.localhost/favorite) rename to favorites
   - [ ] mv to group Collections
-  - [ ] in Dashboard это должно быть сверху и выглядеть как карточки - кнопки - каждая по клику переход к нужной ссылке
-  - [ ] карточки должны сортироваться 
+  - [ ] in Dashboard this should be at the top and look like cards - buttons - each one a click-through to the right link
+  - [ ] the cards should be sortable
 
 ## Upcoming
 

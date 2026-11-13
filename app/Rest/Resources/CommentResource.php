@@ -40,7 +40,7 @@ class CommentResource extends Resource
             Text::make('body')
                 ->searchable()
                 ->creationRules('required')
-                ->examples('Уточнить состав первого релиза'),
+                ->examples('Confirm the scope of the first release'),
             Integer::make('item_id')
                 ->updatable(false)
                 ->rules(Rule::exists('items', 'id')->whereNull('deleted_at'))

@@ -16,7 +16,7 @@ test('create fills the current user as the author', function () {
     $response = $this->postJson('/api/v1/comments/mutate', [
         'mutate' => [[
             'operation' => 'create',
-            'attributes' => ['item_id' => $item->id, 'body' => 'Уточнить состав первого релиза'],
+            'attributes' => ['item_id' => $item->id, 'body' => 'Confirm the scope of the first release'],
         ]],
         'response' => ['selects' => [['field' => 'id'], ['field' => 'body'], ['field' => 'user_id']]],
     ])->assertOk();
@@ -24,7 +24,7 @@ test('create fills the current user as the author', function () {
     $comment = Comment::firstOrFail();
 
     expect($comment->user_id)->toBe($author->getKey())
-        ->and($comment->body)->toBe('Уточнить состав первого релиза')
+        ->and($comment->body)->toBe('Confirm the scope of the first release')
         ->and($response->json('records.0.user_id'))->toBe($author->getKey());
 });
 

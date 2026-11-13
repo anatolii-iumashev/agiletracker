@@ -58,7 +58,7 @@ class ManageSettings extends SettingsPage
                             ->required()
                             ->options([
                                 'en' => 'English',
-                                'ru' => 'Русский',
+                                'ru' => 'Russian',
                             ]),
                         Select::make('date_format')
                             ->label('Date format')
