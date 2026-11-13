@@ -7,8 +7,12 @@ namespace App\Providers;
 use App\Models\User;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\Operation;
+use Dedoc\Scramble\Support\Generator\Response;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Dedoc\Scramble\Support\Generator\Server;
 use Dedoc\Scramble\Support\Generator\Types\Type;
+use Dedoc\Scramble\Support\RouteInfo;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -52,10 +56,11 @@ class AppServiceProvider extends ServiceProvider
         // production: it stays restricted outside local and testing.
         Gate::define('viewApiDocs', fn (?User $user): bool => app()->environment('local', 'testing'));
 
-        file_put_contents(storage_path('logs/scramble-boot.txt'), 'boot '.date('H:i:s').PHP_EOL, FILE_APPEND);
         Scramble::configure()->withDocumentTransformers(function (OpenApi $openApi): void {
-            file_put_contents(storage_path('logs/scramble-boot.txt'), 'transformer'.PHP_EOL, FILE_APPEND);
             $openApi->secure(SecurityScheme::http('bearer'));
+
+            // A relative server keeps the exported snapshot independent of APP_URL.
+            $openApi->servers = [Server::make('/api')->setDescription('API v1')];
 
             foreach (['UserCreate', 'UserUpdate'] as $schema) {
                 $password = $openApi->components->schemas[$schema]->type->properties['password'] ?? null;
@@ -64,6 +69,16 @@ class AppServiceProvider extends ServiceProvider
                     $password->setDescription('Write-only. '.$password->description);
                 }
             }
+        });
+
+        Scramble::configure()->withOperationTransformers(function (Operation $operation, RouteInfo $routeInfo): void {
+            if ($routeInfo->route->getName() !== 'items.destroy') {
+                return;
+            }
+
+            $operation->addResponse(
+                (new Response(409))->setDescription('The items still have active children and were not deleted.')
+            );
         });
     }
 }

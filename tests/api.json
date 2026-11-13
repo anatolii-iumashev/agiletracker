@@ -6,7 +6,8 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api"
+            "url": "/api",
+            "description": "API v1"
         }
     ],
     "security": [
@@ -362,6 +363,9 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/RestValidationFailed"
+                    },
+                    "409": {
+                        "description": "The items still have active children and were not deleted."
                     }
                 }
             }
@@ -546,7 +550,10 @@
                                                         "integer",
                                                         "null"
                                                     ],
-                                                    "description": "Rules: nullable, integer, exists:users,id"
+                                                    "description": "Rules: nullable, integer, exists:users,id",
+                                                    "examples": [
+                                                        3
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -570,7 +577,7 @@
                                         "fields": [
                                             {
                                                 "name": "assignee_id",
-                                                "value": 1
+                                                "value": 3
                                             }
                                         ]
                                     }

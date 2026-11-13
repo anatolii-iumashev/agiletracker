@@ -47,7 +47,8 @@ class AssignItems extends Action
         return [
             Integer::make('assignee_id')
                 ->nullable()
-                ->rules('exists:users,id'),
+                ->rules('exists:users,id')
+                ->examples(3),
         ];
     }
 

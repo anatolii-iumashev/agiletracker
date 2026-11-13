@@ -61,6 +61,11 @@ test('a request without a token is rejected with json', function () {
     $this->getJson('/api/v1/items')
         ->assertUnauthorized()
         ->assertHeader('content-type', 'application/json');
+
+    // Even without an Accept header the API answers JSON instead of redirecting.
+    $this->get('/api/v1/items')
+        ->assertUnauthorized()
+        ->assertHeader('content-type', 'application/json');
 });
 
 test('a token without the read ability is forbidden', function () {

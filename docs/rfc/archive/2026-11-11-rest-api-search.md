@@ -1,7 +1,8 @@
 ---
 title: "REST API на Lomkit: Items, Users, Labels, Comments и OpenAPI"
-status: draft
+status: done
 created: 2026-11-11
+completed: 2026-11-13
 ---
 
 # RFC: REST API на Lomkit — Items, Users, Labels, Comments и автодокументация
@@ -119,39 +120,39 @@ Scribe не является технически несовместимым с 
 
 ### 1. Платформа, общие контракты и безопасность
 
-- [ ] Зависимости соответствуют Laravel `^13.30+`, Lomkit 3.x, Scramble `^0.13.48`, Sanctum; Scribe отсутствует в lockfile, конфигах, routes и assets.
-- [ ] `route:list` содержит ровно endpoints из таблицы для items/users/labels/comments; metrics, restore, force, users destroy и actions вне Items отсутствуют.
-- [ ] Общие search/mutate/delete форматы, Contains, limits, pagination, запрет trashed и JSON 401/403/422/429 подтверждены тестами; `rest:check` зелёный.
+- [x] Зависимости соответствуют Laravel `^13.30+`, Lomkit 3.x, Scramble `^0.13.48`, Sanctum; Scribe отсутствует в lockfile, конфигах, routes и assets.
+- [x] `route:list` содержит ровно endpoints из таблицы для items/users/labels/comments; metrics, restore, force, users destroy и actions вне Items отсутствуют.
+- [x] Общие search/mutate/delete форматы, Contains, limits, pagination, запрет trashed и JSON 401/403/422/429 подтверждены тестами; `rest:check` зелёный.
 
 ### 2. ItemResource
 
-- [ ] Миграция `is_epic` обратно совместима и откатывается; hybrid `type=task + is_epic=true` доступен через тот же ресурс, type сохраняется в `meta.type` без потери других keys.
-- [ ] Search работает по title/description и filters; relations и children count не вызывают N+1; недекларированные поля/meta и вложенные parent/children writes дают 422.
-- [ ] Create/update заполняют reporter текущим пользователем, валидируют поля и labels, запрещают циклы parent_id с откатом всей мутации; `is_epic` не меняет иерархию.
-- [ ] Delete leaf Item мягкий и возвращает 200; активные children дают 409 без изменений. Assign меняет/очищает assignee максимум для 100 явных ID, проверяет update и атомарно возвращает `impacted`.
+- [x] Миграция `is_epic` обратно совместима и откатывается; hybrid `type=task + is_epic=true` доступен через тот же ресурс, type сохраняется в `meta.type` без потери других keys.
+- [x] Search работает по title/description и filters; relations и children count не вызывают N+1; недекларированные поля/meta и вложенные parent/children writes дают 422.
+- [x] Create/update заполняют reporter текущим пользователем, валидируют поля и labels, запрещают циклы parent_id с откатом всей мутации; `is_epic` не меняет иерархию.
+- [x] Delete leaf Item мягкий и возвращает 200; активные children дают 409 без изменений. Assign меняет/очищает assignee максимум для 100 явных ID, проверяет update и атомарно возвращает `impacted`.
 
 ### 3. UserResource
 
-- [ ] Users search/details работают с `users:read`; create/update требуют и `users:write`, и admin. Обычный пользователь с write ability получает 403.
-- [ ] Email уникален с корректным ignore при update, password обязателен на create и хешируется; password/tokens/remember_token невозможно прочитать, отфильтровать или вернуть через selects.
-- [ ] `DELETE /users` и role assignment routes/relations отсутствуют; assignedItems/reportedItems/comments доступны только как read-only includes.
+- [x] Users search/details работают с `users:read`; create/update требуют и `users:write`, и admin. Обычный пользователь с write ability получает 403.
+- [x] Email уникален с корректным ignore при update, password обязателен на create и хешируется; password/tokens/remember_token невозможно прочитать, отфильтровать или вернуть через selects.
+- [x] `DELETE /users` и role assignment routes/relations отсутствуют; assignedItems/reportedItems/comments доступны только как read-only includes.
 
 ### 4. LabelResource
 
-- [ ] Labels поддерживают details/search/mutate/delete с соответствующими abilities; name/color валидируются, read-only items include работает.
-- [ ] Удаление Label очищает только `item_label` связи и не удаляет Items; состав labels изменяется только через ItemResource.
+- [x] Labels поддерживают details/search/mutate/delete с соответствующими abilities; name/color валидируются, read-only items include работает.
+- [x] Удаление Label очищает только `item_label` связи и не удаляет Items; состав labels изменяется только через ItemResource.
 
 ### 5. CommentResource
 
-- [ ] Create требует body/item_id и заполняет автором текущего пользователя; update меняет только body и разрешён автору или admin; чужой пользователь без admin получает 403.
-- [ ] Search фильтрует по item/user и включает item/author; comments удалённого Item исключены из search/mutate/delete.
-- [ ] Delete автора/admin выполняет soft delete с 200; `comments:write` и Policy проверяются независимо, trashed/restore/force отсутствуют.
+- [x] Create требует body/item_id и заполняет автором текущего пользователя; update меняет только body и разрешён автору или admin; чужой пользователь без admin получает 403.
+- [x] Search фильтрует по item/user и включает item/author; comments удалённого Item исключены из search/mutate/delete.
+- [x] Delete автора/admin выполняет soft delete с 200; `comments:write` и Policy проверяются независимо, trashed/restore/force отсутствуют.
 
 ### 6. Автоматическая OpenAPI-документация и проверка контракта
 
-- [ ] `/docs/api` содержит все разрешённые операции четырёх ресурсов и `assign`, bearer auth, схемы полей/relations/actions и ошибки; запрещённые endpoints отсутствуют.
-- [ ] `php artisan scramble:export --path=tests/api.json` создаёт OpenAPI 3.1.0; повторный экспорт не создаёт diff, а изменение ресурса без snapshot ломает CI.
-- [ ] `php artisan test` зелёный, включая все resource/authorization/docs tests и strict authorization; `./vendor/bin/pint` не производит изменений.
+- [x] `/docs/api` содержит все разрешённые операции четырёх ресурсов и `assign`, bearer auth, схемы полей/relations/actions и ошибки; запрещённые endpoints отсутствуют.
+- [x] `php artisan scramble:export --path=tests/api.json` создаёт OpenAPI 3.1.0; повторный экспорт не создаёт diff, а изменение ресурса без snapshot ломает CI.
+- [x] `php artisan test` зелёный, включая все resource/authorization/docs tests и strict authorization; `./vendor/bin/pint` не производит изменений.
 
 ## Дорожная карта
 
@@ -168,7 +169,59 @@ Scribe не является технически несовместимым с 
 
 ## Тест инструкции
 
-<!-- Раздел заполняет dd-delivery по итогам реализации: каждый шаг проверки — заголовок ### со списком ссылок на тесты, страницы, эндпоинты и команды. На этапе discovery раздел не заполняется. -->
+Каждый шаг ниже проверяется на чистом окружении после `composer install`, `php artisan migrate` и `npm run build`.
+
+### 1. Автотесты
+
+- [tests/Feature/Api/ApiFoundationTest.php](../../../tests/Feature/Api/ApiFoundationTest.php) — состав маршрутов, 401/403/429, общие форматы search/mutate/delete, пагинация, запрет trashed и `rest:check`.
+- [tests/Feature/Api/ItemApiTest.php](../../../tests/Feature/Api/ItemApiTest.php) — поиск, фильтры, includes/aggregates, `is_epic`, `meta.type`, циклы `parent_id`, удаление листа и 409, действие `assign`.
+- [tests/Feature/Api/UserApiTest.php](../../../tests/Feature/Api/UserApiTest.php) — безопасные поля, admin-only create/update, уникальность email, хеширование пароля.
+- [tests/Feature/Api/LabelApiTest.php](../../../tests/Feature/Api/LabelApiTest.php) — CRUD метки, формат цвета, удаление только связей `item_label`.
+- [tests/Feature/Api/CommentApiTest.php](../../../tests/Feature/Api/CommentApiTest.php) — авторство, автор/admin, perimeter удалённого Item, soft delete.
+- [tests/Feature/Api/ApiDocumentationTest.php](../../../tests/Feature/Api/ApiDocumentationTest.php) — OpenAPI 3.1, bearer, отсутствие запрещённых путей, актуальность снапшота.
+- Запуск: `php artisan test --compact tests/Feature/Api`.
+
+### 2. Контракт и документация
+
+- `php artisan rest:check` — маршруты аутентифицированы, у четырёх моделей есть политики, action проверяет каждую строку, ресурсы размечены `#[WithoutPerimeter]`.
+- `php artisan scramble:export --path=tests/api.json` — повторный экспорт не должен менять [tests/api.json](../../../tests/api.json); расхождение ломает `php artisan test`.
+- [/docs/api](http://localhost:8000/docs/api) — интерактивная документация со всеми операциями, bearer-схемой и примерами; страница доступна в `local`/`testing`, политика доступа для production остаётся открытым вопросом.
+- [routes/api.php](../../../routes/api.php) — группа `/api/v1` с `auth:sanctum` и `throttle:api`.
+
+### 3. Items
+
+- `GET /api/v1/items` — details: поля, лимиты `[15,25,50,100]`, relations.
+- `POST /api/v1/items/search` — текст по `title`/`description`, фильтры `is_epic`, `type`, `assignee_id`, `labels.name`, includes `labels`/`comments`/`children`, aggregate `children:count`.
+- `POST /api/v1/items/mutate` — create заполняет `reporter_id`, пишет `meta.type`, синхронизирует `labels`; update с `parent_id` на себя или потомка даёт 422 и откатывает всю мутацию.
+- `DELETE /api/v1/items` — лист удаляется мягко (200), Item с активными children даёт 409.
+- `POST /api/v1/items/actions/assign` — `{"resources":[...], "fields":[{"name":"assignee_id","value":3}]}`, не более 100 ID, атомарно.
+- [app/Rest/Resources/ItemResource.php](../../../app/Rest/Resources/ItemResource.php), [app/Rest/Actions/AssignItems.php](../../../app/Rest/Actions/AssignItems.php), [app/Policies/ItemPolicy.php](../../../app/Policies/ItemPolicy.php).
+
+### 4. Users
+
+- `POST /api/v1/users/search` — `name`/`email` поиск и фильтры; `password`, `remember_token`, `email_verified_at` не возвращаются, не фильтруются и не сортируются.
+- `POST /api/v1/users/mutate` — create/update только с ролью `admin` и ability `users:write`; обычный пользователь получает 403; email уникален с игнором текущей записи; пароль ≥ 12 символов и хешируется.
+- [app/Rest/Resources/UserResource.php](../../../app/Rest/Resources/UserResource.php), [app/Policies/UserPolicy.php](../../../app/Policies/UserPolicy.php).
+
+### 5. Labels
+
+- `POST /api/v1/labels/mutate` — имя обязательно (≤ 50), цвет `#RRGGBB` по умолчанию `#6366f1`.
+- `DELETE /api/v1/labels` — удаляет метку и только строки `item_label`; Items остаются.
+- [app/Rest/Resources/LabelResource.php](../../../app/Rest/Resources/LabelResource.php), [app/Policies/LabelPolicy.php](../../../app/Policies/LabelPolicy.php).
+
+### 6. Comments
+
+- `POST /api/v1/comments/mutate` — `user_id` заполняется текущим пользователем, `item_id` обязателен и указывает на неудалённый Item.
+- update меняет только `body`; чужой пользователь без роли `admin` получает 403; delete автора/admin делает soft delete.
+- Комментарии soft-deleted Item не видны в search, не изменяются и не удаляются через API.
+- [app/Rest/Resources/CommentResource.php](../../../app/Rest/Resources/CommentResource.php), [app/Policies/CommentPolicy.php](../../../app/Policies/CommentPolicy.php).
+
+### 7. Ручная проверка токена и лимитера
+
+- Выпуск токена: `php artisan tinker --execute '$u = App\Models\User::first(); echo $u->createToken("api", ["items:read","items:write"])->plainTextToken;'`.
+- Запрос: `curl -H "Authorization: Bearer <token>" -H "Accept: application/json" http://localhost:8000/api/v1/items`.
+- 61-й запрос за минуту возвращает 429; запрос без токена — JSON 401; токен без нужной ability — 403.
+
 
 ## Дополнения
 

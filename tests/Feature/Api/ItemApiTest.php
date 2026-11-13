@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 // ─── Search ──────────────────────────────────────────────────────────────
 
@@ -308,4 +309,27 @@ test('an unknown item action is a 404 for an authorized user', function () {
     actingAsApi(['items:write']);
 
     $this->postJson('/api/v1/items/actions/unknown', [])->assertNotFound();
+});
+
+test('includes and aggregates run in a bounded number of queries', function () {
+    actingAsApi(['items:read']);
+
+    foreach (Item::factory()->count(10)->create(['meta' => ['type' => 'task']]) as $index => $item) {
+        $item->labels()->attach(Label::create(['name' => 'label-'.$index]));
+        Item::factory()->count(2)->childOf($item)->create(['meta' => ['type' => 'task']]);
+    }
+
+    DB::enableQueryLog();
+
+    $this->postJson('/api/v1/items/search', [
+        'search' => [
+            'includes' => [['relation' => 'labels', 'selects' => [['field' => 'name']]]],
+            'aggregates' => [['relation' => 'children', 'type' => 'count']],
+        ],
+    ])->assertOk()->assertJsonPath('total', 30);
+
+    $queries = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($queries)->toBeLessThan(12);
 });

@@ -97,6 +97,12 @@ test('the document describes the item fields and their capabilities', function (
         ->not->toHaveKey('password');
 });
 
+test('the document describes the domain conflict of the item delete', function () {
+    $document = exportedOpenApi();
+
+    expect($document['paths']['/v1/items']['delete']['responses'])->toHaveKey('409');
+});
+
 test('the committed snapshot is up to date', function () {
     $committed = json_decode((string) file_get_contents(base_path('tests/api.json')), true, flags: JSON_THROW_ON_ERROR);
 
